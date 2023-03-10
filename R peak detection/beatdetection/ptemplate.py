@@ -12,7 +12,7 @@ p_wave = []
 
 def qrs(
         r: np.ndarray,
-        n: int) -> int:
+        n: int) -> np.int64:
 
     """
 

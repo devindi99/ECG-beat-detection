@@ -1,7 +1,7 @@
-import rpeakdetection
-import ptemplate
+from beatdetection import rpeakdetection
+from beatdetection import ptemplate
 import matplotlib
-import folderhandling
+from beatdetection import folderhandling
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from dtaidistance import dtw
