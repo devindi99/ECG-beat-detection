@@ -1,4 +1,4 @@
-import r_peak_detection
+import rpeakdetection
 import ptemplate
 import matplotlib
 import folderhandling
@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from dtaidistance import dtw
 
-folder = "Attempt1/"
+folder = "Attempt2/"
 folderhandling.mkdir_p(folder)
 
 for record in range(100, 235):
@@ -15,8 +15,8 @@ for record in range(100, 235):
         output_dir = folder + str(record)
         folderhandling.mkdir_p(output_dir)
         path = 'D:\Semester 6\Internship\mit-bih-arrhythmia-database-1.0.0/'
-        locations, peaks = r_peak_detection.locate_r_peaks(record, path, 30*60)
-        heights, fs = r_peak_detection.read_annotations(record, path)
+        locations, peaks = rpeakdetection.locate_r_peaks(record, path, 30 * 60)
+        heights, fs = rpeakdetection.read_annotations(record, path)
         print(record)
         template = ptemplate.create_template([record], path, 1*60)
         t = [m for m in range(len(template))]

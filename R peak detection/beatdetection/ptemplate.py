@@ -1,7 +1,7 @@
 import numpy as np
 import pywt
-import r_peak_detection
-import filters
+from beatdetection import rpeakdetection
+from beatdetection import filters
 
 # records = [16265, 16272, 16273, 16420, 16773, 16539, 16786, 17152, 17453]
 
@@ -51,8 +51,8 @@ def extract_p_waves(
     global p_wave
 
     try:
-        locations, peaks = r_peak_detection.locate_r_peaks(record, path, n)
-        heights, fs = r_peak_detection.read_annotations(record, path)
+        locations, peaks = rpeakdetection.locate_r_peaks(record, path, n)
+        heights, fs = rpeakdetection.read_annotations(record, path)
         size = 100
         y1 = filters.Low_pass(heights)
         y = filters.iir(y1, 100)

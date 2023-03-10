@@ -1,6 +1,6 @@
 import wfdb
 import numpy as np
-import r_peak_detection
+from beatdetection import rpeakdetection
 
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\"", "!"]
 
@@ -140,7 +140,7 @@ def test_annotate(
                 ref_annotations.append(heights[annotations.sample[i]])
                 ref_locations.append(annotations.sample[i])
 
-        locations, peaks = r_peak_detection.locate_r_peaks(record, path, n)
+        locations, peaks = rpeakdetection.locate_r_peaks(record, path, n)
         locations = np.array(locations)
         peaks = np.array(peaks)
         ref_locations = np.array(ref_locations)
