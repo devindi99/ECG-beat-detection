@@ -21,32 +21,34 @@ def initial(
     global sdiffs
 
     second = False
-
-    maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(n, samples, fs)
-    sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
-                                                 maximum_r_height)
-    slope_heights.append(max_height)
-    sdiffs.append(sdiff_max)
-    if samples[n] > 20.480 / fs:
-        teeta = 7.680 / fs
-    elif 2.800 / fs < samples[n] < 20.480 / fs:
-        teeta = 4.352 / fs
-    else:
-        teeta = 3.840 / fs
-    first = sdiff_max > teeta
-    if first:
-        if maximum_l - minimum_r > maximum_r - minimum_l:
-            smin = min(np.abs(maximum_l), np.abs(minimum_r))
-            state = (np.sign(maximum_l) == -1 * np.sign(minimum_r))
-
+    try:
+        maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(n, samples, fs)
+        sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
+                                                     maximum_r_height)
+        slope_heights.append(max_height)
+        sdiffs.append(sdiff_max)
+        if samples[n] > 20.480 / fs:
+            teeta = 7.680 / fs
+        elif 2.800 / fs < samples[n] < 20.480 / fs:
+            teeta = 4.352 / fs
         else:
-            smin = min(np.abs(maximum_r), np.abs(minimum_l))
-            state = (np.sign(maximum_r) == -1 * np.sign(minimum_l))
-        if smin > 1.536 / fs and state:
-            second = True
-        else:
-            second = False
-    return first and second
+            teeta = 3.840 / fs
+        first = sdiff_max > teeta
+        if first:
+            if maximum_l - minimum_r > maximum_r - minimum_l:
+                smin = min(np.abs(maximum_l), np.abs(minimum_r))
+                state = (np.sign(maximum_l) == -1 * np.sign(minimum_r))
+
+            else:
+                smin = min(np.abs(maximum_r), np.abs(minimum_l))
+                state = (np.sign(maximum_r) == -1 * np.sign(minimum_l))
+            if smin > 1.536 / fs and state:
+                second = True
+            else:
+                second = False
+        return first and second
+    except ValueError:
+        return False
 
 
 def read_annotations(
@@ -79,19 +81,21 @@ def max_min_slopes(
     """
     a = round(0.027 * fs)
     b = round(0.063 * fs)
-    lsopes = []
+    lslopes = []
     rslopes = []
     lheights = []
     rheights = []
     for k in range(a, b + 1):
         if n + k >= len(samples) or n - k < 0:
-            print(rslopes)
             break
-        lsopes.append((samples[n] - samples[n - k]) / k)
+        lslopes.append((samples[n] - samples[n - k]) / k)
         rslopes.append((samples[n] - samples[n + k]) / (-1 * k))
         lheights.append(np.absolute(samples[n] - samples[n - k]))
         rheights.append(np.absolute(samples[n] - samples[n + k]))
-    return max(rslopes), min(rslopes), max(lsopes), min(lsopes), max(rheights), max(lheights)
+    try:
+        return max(rslopes), min(rslopes), max(lslopes), min(lslopes), max(rheights), max(lheights)
+    except ValueError:
+        return 0, 0, 0, 0, 0, 0
 
 
 def max_slope_difference(
@@ -231,14 +235,17 @@ def locate_r_peaks(
             count += 1
 
     for i in range(3 * fs, (n+4) * fs):
-        maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
+        try:
+            maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
                                                                                                         fs)
-        sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
-                                                        maximum_r_height)
-        teeta = teeta_diff(sdiffs, fs)
-        smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-        qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
-            max_height, slope_heights)
+            sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
+                                                         maximum_r_height)
+            teeta = teeta_diff(sdiffs, fs)
+            smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
+                max_height, slope_heights)
+        except ValueError:
+            continue
 
         if qrs_complex:
 

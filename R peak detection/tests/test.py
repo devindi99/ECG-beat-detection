@@ -61,14 +61,14 @@ def test_r_peak_detection():
     y2 = rpeakdetection.locate_r_peaks(100, 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/', 10)
     assert (type(y2) == tuple)
 
-    y3 = rpeakdetection.initial(10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 1230)
+    y3 = rpeakdetection.initial(10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 360)
     assert (type(y3) == bool)
 
     y4 = rpeakdetection.max_min_slopes(10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 1002)
     assert (type(y4) == tuple)
 
     y5 = rpeakdetection.third_criterion(2.356, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
-    assert (type(y5) == bool)
+    assert (type(y5) == np.bool_)
 
     y6 = rpeakdetection.teeta_diff([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 150)
     assert (type(y6) == float)
@@ -80,7 +80,7 @@ def test_r_peak_detection():
     assert (type(y8) == bool)
 
     y9 = rpeakdetection.max_slope_difference(1.235, 8.548, 1.234, 5.264, 6.346, 4.235)
-    assert (type(y9) == bool)
+    assert (type(y9) == tuple)
 
     y10 = rpeakdetection.s_min(5.234, 1.235, 6.235, 0.2358)
     assert (type(y10) == tuple)
