@@ -1,12 +1,12 @@
-def mkdir_p(mypath: str):
+def mkdir_p(mypath: str) -> None:
     """
 
     :param mypath: path where the folder will be created
-    :return:
+    :return: None
     """
 
     from errno import EEXIST
-    from os import makedirs,path
+    from os import makedirs, path
 
     try:
         makedirs(mypath)
@@ -15,3 +15,5 @@ def mkdir_p(mypath: str):
             pass
         else:
             raise
+
+    return None

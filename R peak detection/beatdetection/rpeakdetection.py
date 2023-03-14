@@ -1,5 +1,7 @@
 import wfdb
 import numpy as np
+from beatdetection import beatpair
+import time
 
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
@@ -60,6 +62,7 @@ def read_annotations(
     :param path: folder path where the record exist
     :return: sample heights and the sampling frequency
     """
+
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
@@ -210,24 +213,30 @@ def third_criterion(
 def locate_r_peaks(
         record: int,
         path: str,
-        n: int) -> tuple:
+        n: int,
+        ignore_afib: bool) -> tuple:
     """
-
     :param record: name of the record as an integer
     :param path: folder path where the record exist
-    :param n: time (seconds) upto which the ECG data will be analysed
-    :return: R peak locations and heights
+    :param n: time (seconds) up to which the ECG data will be analysed
+    :param ignore_afib: whether to ignore afib or not
+    :return: R peak locations and heights, time taken to complete the analysis
     """
-    peaks = []
-    locations = []
 
     global slope_heights
     global sdiffs
 
+    peaks = []
+    locations = []
+    slope_heights = []
+    sdiffs = []
+
     count = 0
+    start = time.time()
     heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
     c = round(0.3125 * fs)
+
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
             peaks.append(heights[i])
@@ -236,6 +245,10 @@ def locate_r_peaks(
 
     for i in range(3 * fs, (n+4) * fs):
         try:
+            if ignore_afib:
+                a_fib = beatpair.ref_annotate(record, path)[2]
+                if i in a_fib:
+                    continue
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
                                                                                                         fs)
             sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
@@ -244,23 +257,27 @@ def locate_r_peaks(
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
                 max_height, slope_heights)
+            if qrs_complex:
+                if i - c > locations[-1]:
+                    locations.append(i)
+                    peaks.append(heights[i])
+                    slope_heights.append(max_height)
+                    sdiffs.append(sdiff_max)
+                else:
+                    if sdiff_max > sdiffs[-1]:
+                        peaks[-1] = heights[i]
+                        locations[-1] = i
+                        slope_heights[-1] = max_height
+                        sdiffs[-1] = sdiff_max
         except ValueError:
             continue
-
-        if qrs_complex:
-
-            if i - c > locations[-1]:
-                locations.append(i)
-                peaks.append(heights[i])
-                slope_heights.append(max_height)
-                sdiffs.append(sdiff_max)
-            else:
-                if sdiff_max > sdiffs[-1]:
-                    peaks[-1] = heights[i]
-                    locations[-1] = i
-                    slope_heights[-1] = max_height
-                    sdiffs[-1] = sdiff_max
     locations = locations[count:]
     peaks = peaks[count:]
+    end = time.time()
 
-    return locations, peaks
+    return locations, peaks, end-start
+
+
+
+
+

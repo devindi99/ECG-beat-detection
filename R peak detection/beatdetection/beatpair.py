@@ -1,6 +1,8 @@
 import wfdb
 import numpy as np
 from beatdetection import rpeakdetection
+from beatdetection import plot
+from beatdetection import data_logging
 
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\"", "!"]
 
@@ -116,44 +118,96 @@ def beat_pair(
     return np.asarray(paired_list)
 
 
-def test_annotate(
+def ref_annotate(
         record: int,
-        path: str,
-        n: int) -> tuple:
+        path: str) -> tuple:
 
     """
 
     :param record: name of the record as an integer
     :param path: folder path where the record exist
-    :param n: time (seconds) upto which the ECG data will be analysed
-    :return: deatected beat locations and heights, reference beat locations and heights, paired list
+    :return: reference beat locations and heights, afib indexes
     """
     try:
-        annotations, heights = read_annotations(record, path)
-        ref_annotations = []
-        ref_locations = []
-
-        for i in range(len(annotations.sample)):
-            if annotations.symbol[i] in remove_sym:
+        ann, heights = read_annotations(record, path)
+        ref_ann = []
+        ref_loc = []
+        a_fib = []
+        for i in range(len(ann.sample)):
+            s = 0
+            e = 0
+            if ann.symbol[i] == "[":
+                s = ann.sample[i]
+                while ann.symbol[i] != "]":
+                    e = ann.sample[i]
+                    i += 1
+            for m in range(s, e):
+                a_fib.append(m)
+            if ann.symbol[i] in remove_sym:
                 continue
             else:
-                ref_annotations.append(heights[annotations.sample[i]])
-                ref_locations.append(annotations.sample[i])
+                ref_ann.append(heights[ann.sample[i]])
+                ref_loc.append(ann.sample[i])
 
-        locations, peaks = rpeakdetection.locate_r_peaks(record, path, n)
-        locations = np.array(locations)
-        peaks = np.array(peaks)
-        ref_locations = np.array(ref_locations)
-        ref_annotations = np.array(ref_annotations)
-        paired_list = beat_pair(ref_locations, locations)
+        ref_locations = np.array(ref_loc)
+        ref_annotations = np.array(ref_ann)
 
-        return locations, peaks, ref_locations, ref_annotations, paired_list
+        return ref_locations, ref_annotations, a_fib
 
     except FileNotFoundError:
         print("File: ", record, "doesn't exist.")
 
-        return [], [], [], [], []
+        return [], [], []
 
 
+def accuracy_check(
+        ref_locations: list,
+        ref_annotations: list,
+        locations: list,
+        peaks: list,
+        time: int,
+        record: int,
+        fig: bool,
+        show: bool,
+        excel: bool) -> None:
+
+
+    TP = 0
+    FP = 0
+    FN = 0
+    TP_list = []
+    FP_list = []
+    FN_list = []
+    TP_list_loc = []
+    FP_list_loc = []
+    FN_list_loc = []
+
+    paired_list = beat_pair(np.array(ref_locations), np.array(locations))
+    for i in range(len(paired_list)):
+        if paired_list[i][0] == -1:
+            FP += 1
+            FP_list.append(peaks[paired_list[i][1]])
+            FP_list_loc.append(locations[paired_list[i][1]])
+        elif paired_list[i][1] == -1:
+            FN += 1
+            FN_list.append(ref_annotations[paired_list[i][0]])
+            FN_list_loc.append(ref_locations[paired_list[i][0]])
+        else:
+            TP += 1
+            TP_list.append(peaks[paired_list[i][1]])
+            TP_list_loc.append(locations[paired_list[i][1]])
+
+    sensitivty = TP * 100 / (TP + FN)
+    pp = TP * 100 / (TP + FP)
+    DER = (FP + FN) / len(ref_locations)
+
+    if excel:
+        workbook = input("Enter workbook name: ")
+        sheet = input("Enter sheet name: ")
+        data_logging.log_data((record, len(locations), len(ref_locations), len(ref_locations) - len(locations), TP, FP,
+                               FN, sensitivty, pp, DER, time), workbook, sheet)
+
+    if fig:
+        plot.plotter([[TP_list, TP_list_loc], [FP_list, FP_list_loc], [FN_list, FN_list_loc]], True, show)
 
 

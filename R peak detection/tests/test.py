@@ -84,3 +84,8 @@ def test_r_peak_detection():
 
     y10 = rpeakdetection.s_min(5.234, 1.235, 6.235, 0.2358)
     assert (type(y10) == tuple)
+
+
+def test_folder_handling():
+    y1 = folderhandling.mkdir_p('D:\\Semester 6\\Internship\\test')
+    assert (y1 is None)

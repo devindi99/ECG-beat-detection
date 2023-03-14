@@ -24,7 +24,6 @@ def qrs(
     n = int(n)
     wn1 = r[int(max(n - w, 0)):n]
     wn2 = r[n:int(min(n + w, len(r)))]
-    """searching for the first half"""
     l_min = min(wn1)
     lmax = max(wn2)
     la = abs(lmax - l_min)
@@ -94,11 +93,12 @@ def create_template(
     :param time: time (seconds) upto which the ECG data will be analysed
     :return: template wave
     """
+    print("create template")
     global template
     template = []
 
     for record in records:
-        extract_p_waves(record, path, time + 4)
+        extract_p_waves(record, path, time)
 
     avg = np.average(template, axis=0)
     maximum = np.max(avg)
