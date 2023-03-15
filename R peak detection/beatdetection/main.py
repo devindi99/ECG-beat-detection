@@ -21,19 +21,20 @@ if excel:
     # wb.save("dev.xlsx")
 
 
-for record in range(100, 235):
+for record in range(108,109):
     try:
 
         # output_dir = folder + str(record)
         # folderhandling.mkdir_p(output_dir)
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
-        locations, peaks, time, count = rpeakdetection.locate_r_peaks(record, path, 30 * 60, True)
         heights, fs = rpeakdetection.read_annotations(record, path)
+        locations, peaks, time, count = rpeakdetection.locate_r_peaks(heights, fs, 30 * 60, True)
+
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
         ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                  False, False)
+                                                                 True, True)
         if excel:
             ws1.append((record, len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, time))

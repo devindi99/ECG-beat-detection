@@ -210,8 +210,8 @@ def third_criterion(
 
 
 def locate_r_peaks(
-        record: int,
-        path: str,
+        heights: list,
+        fs: int,
         n: int,
         ignore_afib: bool) -> tuple:
     """
@@ -232,7 +232,7 @@ def locate_r_peaks(
 
     count = 0
     start = time.time()
-    heights, fs = read_annotations(record, path)
+    # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
     c = round(0.31875 * fs)
 
