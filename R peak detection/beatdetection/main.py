@@ -10,7 +10,7 @@ from openpyxl import Workbook
 
 folder = "Attempt3/"
 folderhandling.mkdir_p(folder)
-check_accuracy = int(input("Accuracy checker ON/ OFF? "))
+# check_accuracy = int(input("Accuracy checker ON/ OFF? "))
 excel = int(input("Write accuracy values to a XL sheet? "))
 if excel:
     wb = Workbook()
@@ -24,20 +24,18 @@ if excel:
 for record in range(100, 235):
     try:
 
-        output_dir = folder + str(record)
-        folderhandling.mkdir_p(output_dir)
+        # output_dir = folder + str(record)
+        # folderhandling.mkdir_p(output_dir)
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         locations, peaks, time, count = rpeakdetection.locate_r_peaks(record, path, 30 * 60, True)
         heights, fs = rpeakdetection.read_annotations(record, path)
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
-
-        if check_accuracy:
-            ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
-            TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                      False, False)
-            if excel:
-                ws1.append((record, len(locations), len(ref_locations), TP, FP,
+        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
+        TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
+                                                                  False, False)
+        if excel:
+            ws1.append((record, len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, time))
         print(record)
         # template = ptemplate.create_template([record], locations, heights)
