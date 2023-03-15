@@ -35,8 +35,8 @@ def qrs(
 
 def extract_p_waves(
         record: int,
-        path: str,
-        n: int) -> None:
+        locations: list,
+        heights: list) -> None:
 
     """
 
@@ -50,8 +50,6 @@ def extract_p_waves(
     global p_wave
 
     try:
-        locations, peaks = rpeakdetection.locate_r_peaks(record, path, n)
-        heights, fs = rpeakdetection.read_annotations(record, path)
         size = 100
         y1 = filters.Low_pass(heights)
         y = filters.iir(y1, 100)
@@ -83,8 +81,8 @@ def extract_p_waves(
 
 def create_template(
         records: list,
-        path: str,
-        time: int) -> np.ndarray:
+        locations: list,
+        heights: list) -> np.ndarray:
 
     """
 
@@ -93,12 +91,11 @@ def create_template(
     :param time: time (seconds) upto which the ECG data will be analysed
     :return: template wave
     """
-    print("create template")
     global template
     template = []
 
     for record in records:
-        extract_p_waves(record, path, time)
+        extract_p_waves(record, locations, heights)
 
     avg = np.average(template, axis=0)
     maximum = np.max(avg)
@@ -109,8 +106,8 @@ def create_template(
 
 def p_waves(
         record: int,
-        path: str,
-        time: int) -> list:
+        locations: list,
+        heights: list) -> list:
 
     """
 
@@ -121,6 +118,6 @@ def p_waves(
     """
     global p_wave
     p_wave = []
-    extract_p_waves(record, path, time)
+    extract_p_waves(record, locations, heights)
 
     return p_wave

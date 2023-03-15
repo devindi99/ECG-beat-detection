@@ -10,3 +10,4 @@ def log_data(
     sheet.append(data)
 
     return None
+

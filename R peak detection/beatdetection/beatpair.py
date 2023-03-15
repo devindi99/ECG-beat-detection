@@ -120,7 +120,8 @@ def beat_pair(
 
 def ref_annotate(
         record: int,
-        path: str) -> tuple:
+        path: str,
+        count: int) -> tuple:
 
     """
 
@@ -146,8 +147,9 @@ def ref_annotate(
             if ann.symbol[i] in remove_sym:
                 continue
             else:
-                ref_ann.append(heights[ann.sample[i]])
-                ref_loc.append(ann.sample[i])
+                if ann.sample[i] >= count:
+                    ref_ann.append(heights[ann.sample[i]])
+                    ref_loc.append(ann.sample[i])
 
         ref_locations = np.array(ref_loc)
         ref_annotations = np.array(ref_ann)
@@ -165,11 +167,8 @@ def accuracy_check(
         ref_annotations: list,
         locations: list,
         peaks: list,
-        time: int,
-        record: int,
         fig: bool,
-        show: bool,
-        excel: bool) -> None:
+        show: bool) ->tuple:
 
 
     TP = 0
@@ -201,13 +200,8 @@ def accuracy_check(
     pp = TP * 100 / (TP + FP)
     DER = (FP + FN) / len(ref_locations)
 
-    if excel:
-        workbook = input("Enter workbook name: ")
-        sheet = input("Enter sheet name: ")
-        data_logging.log_data((record, len(locations), len(ref_locations), len(ref_locations) - len(locations), TP, FP,
-                               FN, sensitivty, pp, DER, time), workbook, sheet)
-
     if fig:
         plot.plotter([[TP_list, TP_list_loc], [FP_list, FP_list_loc], [FN_list, FN_list_loc]], True, show)
 
+    return TP, FP, FN, sensitivty, pp, DER
 

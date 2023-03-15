@@ -5,7 +5,7 @@ def plotter(
         scatter: bool,
         show: bool):
 
-    plt.figure()
+    # plt.figure()
     for i in range(len(li)):
         x = li[i][1]
         y = li[i][0]

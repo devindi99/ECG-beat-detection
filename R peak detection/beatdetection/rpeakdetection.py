@@ -1,19 +1,15 @@
 import wfdb
 import numpy as np
-from beatdetection import beatpair
 import time
-
+from beatdetection import beatpair
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
 sdiffs = []
-
-
 def initial(
         n: int,
         samples: list,
         fs: int) -> bool:
     """
-
     :param n: index of the current sample
     :param samples: sample heights
     :param fs: sampling frequency
@@ -35,7 +31,9 @@ def initial(
             teeta = 4.352 / fs
         else:
             teeta = 3.840 / fs
+
         first = sdiff_max > teeta
+
         if first:
             if maximum_l - minimum_r > maximum_r - minimum_l:
                 smin = min(np.abs(maximum_l), np.abs(minimum_r))
@@ -44,6 +42,7 @@ def initial(
             else:
                 smin = min(np.abs(maximum_r), np.abs(minimum_l))
                 state = (np.sign(maximum_r) == -1 * np.sign(minimum_l))
+
             if smin > 1.536 / fs and state:
                 second = True
             else:
@@ -235,7 +234,7 @@ def locate_r_peaks(
     start = time.time()
     heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
-    c = round(0.3125 * fs)
+    c = round(0.31875 * fs)
 
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
@@ -243,12 +242,13 @@ def locate_r_peaks(
             locations.append(i)
             count += 1
 
-    for i in range(3 * fs, (n+4) * fs):
+    for i in range(3 * fs, len(heights) + 1 - b):
         try:
-            if ignore_afib:
-                a_fib = beatpair.ref_annotate(record, path)[2]
-                if i in a_fib:
-                    continue
+            # if ignore_afib:
+            #     a_fib = beatpair.ref_annotate(record, path)[2]
+            #     if i in a_fib:
+            #         continue
+            # print(i)
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
                                                                                                         fs)
             sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
@@ -275,7 +275,7 @@ def locate_r_peaks(
     peaks = peaks[count:]
     end = time.time()
 
-    return locations, peaks, end-start
+    return locations, peaks, end-start, count
 
 
 
