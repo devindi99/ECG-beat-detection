@@ -21,7 +21,7 @@ if excel:
     # wb.save("dev.xlsx")
 
 
-for record in range(108,109):
+for record in range(100, 235):
     try:
 
         # output_dir = folder + str(record)
@@ -34,7 +34,7 @@ for record in range(108,109):
         plt.plot(t, heights)
         ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                 True, True)
+                                                                 False, False)
         if excel:
             ws1.append((record, len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, time))

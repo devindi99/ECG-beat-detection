@@ -5,6 +5,8 @@ from beatdetection import beatpair
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
 sdiffs = []
+
+
 def initial(
         n: int,
         samples: list,
@@ -93,7 +95,7 @@ def max_min_slopes(
         lslopes.append((samples[n] - samples[n - k]) / k)
         rslopes.append((samples[n] - samples[n + k]) / (-1 * k))
         lheights.append(np.absolute(samples[n] - samples[n - k]))
-        rheights.append(np.absolute(samples[n] - samples[n + k]))
+        rheights.append(np.absolute(samples[n+k] - samples[n]))
     try:
         return max(rslopes), min(rslopes), max(lslopes), min(lslopes), max(rheights), max(lheights)
     except ValueError:
@@ -235,6 +237,7 @@ def locate_r_peaks(
     # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
     c = round(0.31875 * fs)
+    a = round(0.027 * fs)
 
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
@@ -258,6 +261,9 @@ def locate_r_peaks(
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
                 max_height, slope_heights)
             if qrs_complex:
+                # element = max(np.absolute(heights[i - a:i + a + 1]))
+                # loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                # loc = loc[0][0] + i - a
                 if i - c > locations[-1]:
                     locations.append(i)
                     peaks.append(heights[i])
