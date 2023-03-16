@@ -1,4 +1,4 @@
-from beatdetection import rpeakdetection
+from beatdetection import methodII
 from beatdetection import ptemplate
 import matplotlib
 from beatdetection import folderhandling
@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 from dtaidistance import dtw
 from openpyxl import Workbook
 
-folder = "Attempt3/"
-folderhandling.mkdir_p(folder)
-# check_accuracy = int(input("Accuracy checker ON/ OFF? "))
-excel = int(input("Write accuracy values to a XL sheet? "))
-if excel:
-    wb = Workbook()
-    name = input("Enter workbook name: ")
-    sheet = input("Enter sheet name: ")
-    ws1 = wb.create_sheet("Mysheet")
-    ws1.title = sheet
-    # wb.save("dev.xlsx")
+# folder = "Attempt3/"
+# folderhandling.mkdir_p(folder)
+# # check_accuracy = int(input("Accuracy checker ON/ OFF? "))
+# excel = int(input("Write accuracy values to a XL sheet? "))
+# if excel:
+#     wb = Workbook()
+#     name = input("Enter workbook name: ")
+#     sheet = input("Enter sheet name: ")
+#     ws1 = wb.create_sheet("Mysheet")
+#     ws1.title = sheet
+#     # wb.save("dev.xlsx")
 
 
 for record in range(100, 235):
@@ -27,17 +27,18 @@ for record in range(100, 235):
         # output_dir = folder + str(record)
         # folderhandling.mkdir_p(output_dir)
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
-        heights, fs = rpeakdetection.read_annotations(record, path)
-        locations, peaks, time, count = rpeakdetection.locate_r_peaks(heights, fs, 30 * 60, True)
-
+        heights, fs =methodII.read_annotations(record, path)
+        locations, peaks, time, count = methodII.locate_r_peaks(heights, fs)
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
-        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
-        TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                 True, True)
-        if excel:
-            ws1.append((record, len(locations), len(ref_locations), TP, FP,
-                                       FN, sensitivty, pp, DER, time))
+        plt.scatter(locations, peaks, marker="x", color="red")
+        plt.show()
+        # ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
+        # TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
+        #                                                          True, True)
+        # if excel:
+        #     ws1.append((record, len(locations), len(ref_locations), TP, FP,
+        #                                FN, sensitivty, pp, DER, time))
         print(record)
         # template = ptemplate.create_template([record], locations, heights)
         # t = [m for m in range(len(template))]
@@ -61,6 +62,6 @@ for record in range(100, 235):
         #         plt.close()
     except FileNotFoundError:
         continue
-if excel:
-    wb.save(name)
+# if excel:
+#     wb.save(name)
 
