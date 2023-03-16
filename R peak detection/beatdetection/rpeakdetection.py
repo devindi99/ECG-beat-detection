@@ -1,6 +1,7 @@
 import wfdb
 import numpy as np
 import time
+from beatdetection import filters
 from beatdetection import beatpair
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
@@ -68,6 +69,8 @@ def read_annotations(
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
     # resampled = signal.resample_poly(heights, 250, 360)
+    heights = filters.Low_pass(heights)
+    heights = filters.iir(heights, 0.65)
     fs = fields["fs"]
     return heights, fs
 
