@@ -4,7 +4,7 @@ from beatdetection import rpeakdetection
 from beatdetection import plot
 from beatdetection import data_logging
 
-remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\"", "!"]
+remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 
 
 def read_annotations(

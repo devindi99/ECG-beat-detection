@@ -239,8 +239,9 @@ def locate_r_peaks(
     start = time.time()
     # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
-    c = round(0.35 * fs)
+    c = round(0.32 * fs)
     a = round(0.027 * fs)
+    # d = round(0.48*fs)
 
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
@@ -264,18 +265,18 @@ def locate_r_peaks(
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
                 max_height, slope_heights)
             if qrs_complex:
-                # element = max(np.absolute(heights[i - a:i + a + 1]))
-                # loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
-                # loc = loc[0][0] + i - a
+                element = max(np.absolute(heights[i - b:i + b + 1]))
+                loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
+                loc = loc[0][0] + i - b
                 if i - c > locations[-1]:
-                    locations.append(i)
-                    peaks.append(heights[i])
+                    locations.append(loc)
+                    peaks.append(heights[loc])
                     slope_heights.append(max_height)
                     sdiffs.append(sdiff_max)
                 else:
                     if sdiff_max > sdiffs[-1]:
-                        peaks[-1] = heights[i]
-                        locations[-1] = i
+                        peaks[-1] = heights[loc]
+                        locations[-1] = loc
                         slope_heights[-1] = max_height
                         sdiffs[-1] = sdiff_max
         except ValueError:
