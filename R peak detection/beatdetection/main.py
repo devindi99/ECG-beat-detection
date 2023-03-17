@@ -18,7 +18,6 @@ if excel:
     sheet = input("Enter sheet name: ")
     ws1 = wb.create_sheet("Mysheet")
     ws1.title = sheet
-    # wb.save("dev.xlsx")
 
 
 for record in range(100, 235):
@@ -34,7 +33,7 @@ for record in range(100, 235):
         plt.plot(t, heights)
         ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                 False, False)
+                                                                False, False)
         if excel:
             ws1.append((record, len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, time))

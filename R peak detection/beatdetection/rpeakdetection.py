@@ -239,7 +239,7 @@ def locate_r_peaks(
     start = time.time()
     # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
-    c = round(0.325 * fs)
+    c = round(0.35 * fs)
     a = round(0.027 * fs)
 
     for i in range(b, 3 * fs):
