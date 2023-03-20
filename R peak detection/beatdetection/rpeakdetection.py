@@ -249,7 +249,7 @@ def locate_r_peaks(
             locations.append(i)
             count += 1
 
-    for i in range(b, len(heights) + 1 - b):
+    for i in range(5*60*fs, len(heights) + 1 - b):
         try:
             # if ignore_afib:
             #     a_fib = beatpair.ref_annotate(record, path)[2]
