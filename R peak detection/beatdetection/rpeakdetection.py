@@ -241,15 +241,16 @@ def locate_r_peaks(
     b = round(0.063 * fs)
     c = round(0.32 * fs)
     a = round(0.027 * fs)
-    # d = round(0.48*fs)
+    d = round(0.2*fs)
 
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
             peaks.append(heights[i])
             locations.append(i)
             count += 1
-
-    for i in range(5*60*fs, len(heights) + 1 - b):
+    i = 5*60*fs
+    # for i in range(5*60*fs, len(heights) + 1 - b):
+    while i < len(heights) + 1 - b :
         try:
             # if ignore_afib:
             #     a_fib = beatpair.ref_annotate(record, path)[2]
@@ -264,21 +265,30 @@ def locate_r_peaks(
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
                 max_height, slope_heights)
+
             if qrs_complex:
-                element = max(np.absolute(heights[i - b:i + b + 1]))
-                loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
-                loc = loc[0][0] + i - b
+
+                element = max(np.absolute(heights[i - d:i + d + 1]))
+                loc = np.where(np.absolute(heights[i - d:i + d + 1]) == element)
+                loc = loc[0][0] + i - d
+                # locations.append(loc)
+                # peaks.append(heights[loc])
+                # slope_heights.append(max_height)
+                # sdiffs.append(sdiff_max)
                 if i - c > locations[-1]:
                     locations.append(loc)
                     peaks.append(heights[loc])
                     slope_heights.append(max_height)
                     sdiffs.append(sdiff_max)
+
                 else:
                     if sdiff_max > sdiffs[-1]:
                         peaks[-1] = heights[loc]
                         locations[-1] = loc
                         slope_heights[-1] = max_height
                         sdiffs[-1] = sdiff_max
+                i += d
+            i += 1
         except ValueError:
             continue
     locations = locations[count:]

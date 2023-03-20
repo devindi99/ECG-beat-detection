@@ -41,10 +41,10 @@ AHA_records = ("1201", "1202", "1203", "1204", "1205",
                "6201", "6202", "6203", "6204", "6205",
                "6206", "6207", "6208", "6209", "6210",
                "7201", "7202", "7203", "7204", "7205",
-               "7206", "7207", "7208", "7209", "7210",
-               "8201", "8202", "8203", "8204", "8206",
-               "8207", "8208", "8209", "8210"
-               )  # total 78 records, 2 records excluded due to paced beats
+               "7206", "7207", "7208", "7209", "7210")
+               # "8201", "8202", "8203", "8204", "8206",
+               # "8207", "8208", "8209", "8210"
+               # )  # total 78 records, 2 records excluded due to paced beats
 AHA_sampled_freq = 250
 
 
@@ -111,9 +111,9 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
     """
     if annotation.ndim == 2:
         peaks = annotation[:, 0]
-        # plt.figure(1)
-        # plt.title(f'AHA record {record}: ECG signal with peaks')
-        # plt.plot(signal)
+        plt.figure(1)
+        plt.title(f'AHA record {record}: ECG signal with peaks')
+        plt.plot(signal)
         # plt.scatter(peaks, signal[peaks], c='r')
         # plt.show()
         return peaks, signal[peaks]
@@ -131,7 +131,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         locations, peaks, time, count = rpeakdetection.locate_r_peaks(ecg, 250, 30 * 60, True)
         print(file_list[j])
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                 False, False)
+                                                                 True, True)
         if excel:
             ws1.append((file_list[j], len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, time))
@@ -142,6 +142,6 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = list(AHA_records)
+    check_file_list = ["2204"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
