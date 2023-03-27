@@ -69,8 +69,8 @@ def read_annotations(
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
     # resampled = signal.resample_poly(heights, 250, 360)
-    heights = filters.Low_pass(heights)
-    heights = filters.iir(heights, 0.65)
+    # heights = filters.Low_pass(heights)
+    # heights = filters.iir(heights, 0.65)
     fs = fields["fs"]
     return heights, fs
 
@@ -239,24 +239,26 @@ def locate_r_peaks(
     start = time.time()
     # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
-    c = round(0.32 * fs)
+    c = round(0.37 * fs)
     a = round(0.027 * fs)
-    d = round(0.2*fs)
+    d = round(0.027*2*fs)
 
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
+            # element = max(np.absolute(heights[i - b:i + b + 1]))
+            # loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
+            # loc = loc[0][0] + i - b
             peaks.append(heights[i])
             locations.append(i)
             count += 1
-    i = 5*60*fs
-    # for i in range(5*60*fs, len(heights) + 1 - b):
-    while i < len(heights) + 1 - b :
+
+    for i in range(b, len(heights) + 1 - b):
+    # while i < len(heights) + 1 - b :
         try:
             # if ignore_afib:
             #     a_fib = beatpair.ref_annotate(record, path)[2]
             #     if i in a_fib:
             #         continue
-            # print(i)
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
                                                                                                         fs)
             sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
@@ -267,28 +269,26 @@ def locate_r_peaks(
                 max_height, slope_heights)
 
             if qrs_complex:
-
-                element = max(np.absolute(heights[i - d:i + d + 1]))
-                loc = np.where(np.absolute(heights[i - d:i + d + 1]) == element)
-                loc = loc[0][0] + i - d
+                # element = max(np.absolute(heights[i - a:i + a + 1]))
+                # loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                # loc = loc[0][0] + i - a
                 # locations.append(loc)
                 # peaks.append(heights[loc])
                 # slope_heights.append(max_height)
                 # sdiffs.append(sdiff_max)
                 if i - c > locations[-1]:
-                    locations.append(loc)
-                    peaks.append(heights[loc])
+                    locations.append(i)
+                    peaks.append(heights[i])
                     slope_heights.append(max_height)
                     sdiffs.append(sdiff_max)
 
                 else:
                     if sdiff_max > sdiffs[-1]:
-                        peaks[-1] = heights[loc]
-                        locations[-1] = loc
+                        peaks[-1] = heights[i]
+                        locations[-1] = i
                         slope_heights[-1] = max_height
                         sdiffs[-1] = sdiff_max
-                i += d
-            i += 1
+
         except ValueError:
             continue
     locations = locations[count:]

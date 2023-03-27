@@ -11,6 +11,7 @@
 #  from Synergen Technology Labs LLC
 
 import os
+from scipy.io import savemat
 from scipy.io import loadmat
 import numpy as np
 import matplotlib.pyplot as plt
@@ -94,6 +95,7 @@ def read_aharecord_reference(directory: str, record: str) -> Tuple[npt.NDArray, 
         beatdata = loadmat(beatfile)
         peakdata = loadmat(rpeakfile)
         signal = refdata['M'][:, 0].reshape((-1, 1))
+
         beattype_init = beatdata['ANNOT']
         peaks_init = peakdata['ATRTIME'] + 5
 
@@ -130,6 +132,14 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
         locations, peaks, time, count = rpeakdetection.locate_r_peaks(ecg, 250, 30 * 60, True)
         print(file_list[j])
+
+
+        # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
+        filename = file_list[j] + ".mat"
+        savemat(filename, {'testann': np.array(locations), "refann": np.array(ref_locations)})
+        data = loadmat(filename)
+        print(data["testann"])
+        print(data["refann"])
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
                                                                  True, True)
         if excel:
@@ -142,6 +152,6 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = ["2204"]
+    check_file_list = ["8201"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)

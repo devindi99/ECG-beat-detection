@@ -27,17 +27,22 @@ for record in range(100, 235):
         # folderhandling.mkdir_p(output_dir)
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         heights, fs = rpeakdetection.read_annotations(record, path)
+        print(record)
         locations, peaks, time, count = rpeakdetection.locate_r_peaks(heights, fs, 30 * 60, True)
 
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
         ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                False, False)
+                                                              False, False)
+        # print("TP: ", TP)
+        # print("FP: ", FP)
+        # print("FN: ", FN)
+
         if excel:
             ws1.append((record, len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, time))
-        print(record)
+
         # template = ptemplate.create_template([record], locations, heights)
         # t = [m for m in range(len(template))]
         # plt.figure()
