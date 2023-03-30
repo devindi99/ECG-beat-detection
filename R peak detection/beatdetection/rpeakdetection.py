@@ -1,6 +1,7 @@
 import wfdb
 import numpy as np
 import time
+from BaselineRemoval import BaselineRemoval
 from beatdetection import filters
 from beatdetection import beatpair
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
@@ -26,8 +27,7 @@ def initial(
         maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(n, samples, fs)
         sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
                                                      maximum_r_height)
-        slope_heights.append(max_height)
-        sdiffs.append(sdiff_max)
+
         if samples[n] > 20.480 / fs:
             teeta = 7.680 / fs
         elif 2.800 / fs < samples[n] < 20.480 / fs:
@@ -50,6 +50,9 @@ def initial(
                 second = True
             else:
                 second = False
+        if first and second:
+            slope_heights.append(max_height)
+            sdiffs.append(sdiff_max)
         return first and second
     except ValueError:
         return False
@@ -68,11 +71,13 @@ def read_annotations(
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
+    baseObj = BaselineRemoval(heights)
+    Zhangfit_output = baseObj.ZhangFit()
     # resampled = signal.resample_poly(heights, 250, 360)
     # heights = filters.Low_pass(heights)
     # heights = filters.iir(heights, 0.65)
     fs = fields["fs"]
-    return heights, fs
+    return  Zhangfit_output, fs
 
 
 def max_min_slopes(
@@ -236,10 +241,11 @@ def locate_r_peaks(
     sdiffs = []
 
     count = 0
+    undetected = 0
     start = time.time()
     # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
-    c = round(0.37 * fs)
+    c = round(0.3125 * fs)
     a = round(0.027 * fs)
     d = round(0.027*2*fs)
 
@@ -255,10 +261,8 @@ def locate_r_peaks(
     for i in range(b, len(heights) + 1 - b):
     # while i < len(heights) + 1 - b :
         try:
-            # if ignore_afib:
-            #     a_fib = beatpair.ref_annotate(record, path)[2]
-            #     if i in a_fib:
-            #         continue
+
+
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
                                                                                                         fs)
             sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
@@ -269,33 +273,34 @@ def locate_r_peaks(
                 max_height, slope_heights)
 
             if qrs_complex:
-                # element = max(np.absolute(heights[i - a:i + a + 1]))
-                # loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
-                # loc = loc[0][0] + i - a
+                element = max(np.absolute(heights[i - a:i + a + 1]))
+                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                loc = loc[0][0] + i - a
                 # locations.append(loc)
                 # peaks.append(heights[loc])
                 # slope_heights.append(max_height)
                 # sdiffs.append(sdiff_max)
                 if i - c > locations[-1]:
-                    locations.append(i)
-                    peaks.append(heights[i])
+                    locations.append(loc)
+                    peaks.append(heights[loc])
                     slope_heights.append(max_height)
                     sdiffs.append(sdiff_max)
 
                 else:
                     if sdiff_max > sdiffs[-1]:
-                        peaks[-1] = heights[i]
-                        locations[-1] = i
+                        peaks[-1] = heights[loc]
+                        locations[-1] = loc
                         slope_heights[-1] = max_height
                         sdiffs[-1] = sdiff_max
 
+
         except ValueError:
             continue
-    locations = locations[count:]
-    peaks = peaks[count:]
+    locations = locations[count-1:]
+    peaks = peaks[count-1:]
     end = time.time()
 
-    return locations, peaks, end-start, count
+    return locations, peaks, end-start, count-1
 
 
 

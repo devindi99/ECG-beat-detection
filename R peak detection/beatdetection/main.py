@@ -28,11 +28,19 @@ for record in range(100, 235):
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         heights, fs = rpeakdetection.read_annotations(record, path)
         print(record)
+
         locations, peaks, time, count = rpeakdetection.locate_r_peaks(heights, fs, 30 * 60, True)
 
+        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
+        for m in range(len(a_fib)):
+            if a_fib[m] in locations:
+                o = locations.index(a_fib[m])
+                locations.remove(a_fib[m])
+                del peaks[o]
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
-        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, count)
+        # plt.scatter(locations, peaks, color="red", marker="x")
+        # plt.show()
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
                                                               False, False)
         # print("TP: ", TP)

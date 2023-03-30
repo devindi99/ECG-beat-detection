@@ -4,7 +4,7 @@ from beatdetection import rpeakdetection
 from beatdetection import plot
 from beatdetection import data_logging
 
-remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
+remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\"", "!"]
 
 
 def read_annotations(
@@ -147,9 +147,8 @@ def ref_annotate(
             if ann.symbol[i] in remove_sym:
                 continue
             else:
-                if ann.sample[i] >= count:
-                    ref_ann.append(heights[ann.sample[i]])
-                    ref_loc.append(ann.sample[i])
+                ref_ann.append(heights[ann.sample[i]])
+                ref_loc.append(ann.sample[i])
 
         ref_locations = np.array(ref_loc)
         ref_annotations = np.array(ref_ann)
