@@ -23,7 +23,7 @@ def read_annotations(
     return annotations, heights
 
 
-def beat_pair(refannot, testannot, fs=250):
+def beat_pair(refannot, testannot, fs=360):
     refannot = refannot.flatten().reshape((np.size(refannot), -1))
     testannot = testannot.flatten().reshape((np.size(testannot),-1))
     refannstructinit = np.hstack((refannot, np.zeros((refannot.shape[0], 5))))

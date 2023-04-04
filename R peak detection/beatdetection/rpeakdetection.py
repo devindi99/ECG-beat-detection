@@ -1,5 +1,6 @@
 import wfdb
 import numpy as np
+import matplotlib.pyplot as plt
 import time
 from BaselineRemoval import BaselineRemoval
 from beatdetection import filters
@@ -71,13 +72,16 @@ def read_annotations(
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
-    baseObj = BaselineRemoval(heights)
-    Zhangfit_output = baseObj.ZhangFit()
+    # t = [i for i in range(len(heights))]
+    # plt.plot(t, heights)
     # resampled = signal.resample_poly(heights, 250, 360)
-    # heights = filters.Low_pass(heights)
-    # heights = filters.iir(heights, 0.65)
+    heights = filters.Low_pass(heights)
+
+    heights = filters.iir(heights, 0.65)
+    # baseObj = BaselineRemoval(heights)
+    # Zhangfit_output = baseObj.ZhangFit()
     fs = fields["fs"]
-    return  Zhangfit_output, fs
+    return heights, fs
 
 
 def max_min_slopes(
@@ -202,6 +206,22 @@ def second_criterion(
     else:
         return False
 
+def second_criterion_re(
+        smin: float,
+        state: bool,
+        fs: int) -> bool:
+    """
+
+    :param smin: minimum of slopes
+    :param state: True-> sample is a local min/max False->otherwise
+    :param fs: sampling frequency
+    :return: True -> sample validates second criterion, False -> otherwise
+    """
+    if smin > 15.36 / fs and state:
+        return True
+    else:
+        return False
+
 
 def third_criterion(
         cur_height: float,
@@ -222,8 +242,7 @@ def third_criterion(
 def locate_r_peaks(
         heights: list,
         fs: int,
-        n: int,
-        ignore_afib: bool) -> tuple:
+        c: int) -> tuple:
     """
     :param record: name of the record as an integer
     :param path: folder path where the record exist
@@ -237,17 +256,18 @@ def locate_r_peaks(
 
     peaks = []
     locations = []
+    l = []
+    p = []
     slope_heights = []
     sdiffs = []
 
     count = 0
     undetected = 0
-    start = time.time()
+
     # heights, fs = read_annotations(record, path)
     b = round(0.063 * fs)
-    c = round(0.3125 * fs)
+    # c = round(0.37 * fs)
     a = round(0.027 * fs)
-    d = round(0.027*2*fs)
 
     for i in range(b, 3 * fs):
         if initial(i, heights, fs):
@@ -276,11 +296,13 @@ def locate_r_peaks(
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
+                l.append(loc)
+                p.append(heights[loc])
                 # locations.append(loc)
                 # peaks.append(heights[loc])
                 # slope_heights.append(max_height)
                 # sdiffs.append(sdiff_max)
-                if i - c > locations[-1]:
+                if loc - c > locations[-1]:
                     locations.append(loc)
                     peaks.append(heights[loc])
                     slope_heights.append(max_height)
@@ -298,11 +320,87 @@ def locate_r_peaks(
             continue
     locations = locations[count-1:]
     peaks = peaks[count-1:]
-    end = time.time()
-
-    return locations, peaks, end-start, count-1
+    # plt.scatter(l, p, color="red", marker="x")
 
 
+    return locations, peaks, count-1, sdiffs[count-1:], slope_heights[count-1:]
+
+
+def new_r_peaks(
+        heights: list,
+        fs: int,
+        c: int,
+        begin_loc: int,
+        end_loc: int,
+        begin_peak: int,
+        sd: list,
+        sl: list):
+
+
+    global slope_heights
+    global sdiffs
+
+    peaks = [begin_peak]
+    locations = [begin_loc]
+    l = []
+    p = []
+    slope_heights = sl
+    sdiffs = sd
+    b = round(0.063 * fs)
+    a = round(0.027 * fs)
+
+
+    for i in range(b, len(heights) + 1 - b):
+        # while i < len(heights) + 1 - b :
+        try:
+
+            maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
+                                                                                                            fs)
+            sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
+                                                         maximum_r_height)
+            teeta = teeta_diff(sdiffs, fs)
+            smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion(
+                max_height, slope_heights)
+            # print(first_criterion(teeta, sdiff_max), "  ", second_criterion(smin, state, fs), "  ",  third_criterion(
+            #     max_height, slope_heights))
+            # locations.append(i + begin_loc)
+            # peaks.append(heights[i])
+            # slope_heights.append(max_height)
+            # sdiffs.append(sdiff_max)
+
+            if qrs_complex:
+                l.append(i + begin_loc)
+                p.append(heights[i])
+                element = max(np.absolute(heights[i - a:i + a + 1]))
+                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                loc = loc[0][0] + i - a
+                # locations.append(loc+begin_loc)
+                # peaks.append(heights[loc])
+                # slope_heights.append(max_height)
+                # sdiffs.append(sdiff_max)
+                if loc+begin_loc + c < end_loc:
+                    if loc+begin_loc - c > locations[-1]:
+                        locations.append(loc+begin_loc)
+                        peaks.append(heights[loc])
+                        slope_heights.append(max_height)
+                        sdiffs.append(sdiff_max)
+
+                    else:
+                        if sdiff_max > sdiffs[-1]:
+                            peaks[-1] = heights[loc]
+                            locations[-1] = loc+begin_loc
+                            slope_heights[-1] = max_height
+                            sdiffs[-1] = sdiff_max
+
+
+        except ValueError:
+            continue
+    locations = locations[1:]
+    peaks = peaks[1:]
+    plt.scatter(l, p, color="red", marker="x")
+
+    return locations, peaks
 
 
 

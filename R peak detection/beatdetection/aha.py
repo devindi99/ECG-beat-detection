@@ -20,6 +20,7 @@ from typing import Union, Optional, Tuple, List
 from beatdetection import rpeakdetection
 from beatdetection import beatpair
 from openpyxl import Workbook
+from beatdetection import recorrect
 
 excel = int(input("Write accuracy values to a XL sheet? "))
 if excel:
@@ -130,16 +131,43 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
     for j in range(len(file_list)):
         ecg, ann = read_aharecord_reference(file_dir, file_list[j])
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
-        locations, peaks, time, count = rpeakdetection.locate_r_peaks(ecg, 250, 30 * 60, True)
+        locations, peaks, time, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
         print(file_list[j])
 
+        k = len(locations)
+        i = 0
+        l = []
+        p = []
 
+        while i < k - 1:
+
+            state = recorrect.check_rr(locations[i], locations[i + 1], round(0.6 * AHA_sampled_freq))
+            if state:
+                l.append(locations[i])
+                l.append(locations[i + 1])
+                p.append(peaks[i])
+                p.append(peaks[i + 1])
+                pre_loc = locations[:i + 1]
+                post_loc = locations[i + 1:]
+                pre_peaks = peaks[:i + 1]
+                post_peaks = peaks[i + 1:]
+
+                add_locs, add_peaks = recorrect.check_peak(round(0.3 * AHA_sampled_freq), ecg[locations[i]:locations[i + 1]], AHA_sampled_freq,
+                                                           locations[i], locations[i + 1], peaks[i], sdiffs[i - 10:i],
+                                                           slope_heights[i - 10:i])
+                n = len(add_locs)
+                # plt.scatter(add_locs, add_peaks, color="black")
+                locations = pre_loc + add_locs + post_loc
+                peaks = pre_peaks + add_peaks + post_peaks
+
+                i += n
+            i += 1
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
-        filename = file_list[j] + ".mat"
-        savemat(filename, {'testann': np.array(locations), "refann": np.array(ref_locations)})
-        data = loadmat(filename)
-        print(data["testann"])
-        print(data["refann"])
+        # filename = file_list[j] + ".mat"
+        # savemat(filename, {'testann': np.array(locations), "refann": np.array(ref_locations)})
+        # data = loadmat(filename)
+        # print(data["testann"])
+        # print(data["refann"])
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
                                                                  True, True)
         if excel:
