@@ -217,7 +217,7 @@ def second_criterion_re(
     :param fs: sampling frequency
     :return: True -> sample validates second criterion, False -> otherwise
     """
-    if smin > 15.36 / fs and state:
+    if smin > 10.36 / fs and state:
         return True
     else:
         return False
@@ -278,7 +278,7 @@ def locate_r_peaks(
             locations.append(i)
             count += 1
 
-    for i in range(b, len(heights) + 1 - b):
+    for i in range(5*60*250, len(heights) + 1 - b):
     # while i < len(heights) + 1 - b :
         try:
 
@@ -362,12 +362,8 @@ def new_r_peaks(
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion(
                 max_height, slope_heights)
-            # print(first_criterion(teeta, sdiff_max), "  ", second_criterion(smin, state, fs), "  ",  third_criterion(
-            #     max_height, slope_heights))
-            # locations.append(i + begin_loc)
-            # peaks.append(heights[i])
-            # slope_heights.append(max_height)
-            # sdiffs.append(sdiff_max)
+            # if first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs):
+
 
             if qrs_complex:
                 l.append(i + begin_loc)

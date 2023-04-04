@@ -21,6 +21,7 @@ from beatdetection import rpeakdetection
 from beatdetection import beatpair
 from openpyxl import Workbook
 from beatdetection import recorrect
+import time
 
 excel = int(input("Write accuracy values to a XL sheet? "))
 if excel:
@@ -43,10 +44,10 @@ AHA_records = ("1201", "1202", "1203", "1204", "1205",
                "6201", "6202", "6203", "6204", "6205",
                "6206", "6207", "6208", "6209", "6210",
                "7201", "7202", "7203", "7204", "7205",
-               "7206", "7207", "7208", "7209", "7210")
-               # "8201", "8202", "8203", "8204", "8206",
-               # "8207", "8208", "8209", "8210"
-               # )  # total 78 records, 2 records excluded due to paced beats
+               "7206", "7207", "7208", "7209", "7210",
+               "8201", "8202", "8203", "8204", "8206",
+               "8207", "8208", "8209", "8210"
+               )  # total 78 records, 2 records excluded due to paced beats
 AHA_sampled_freq = 250
 
 
@@ -117,7 +118,7 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
         plt.figure(1)
         plt.title(f'AHA record {record}: ECG signal with peaks')
         plt.plot(signal)
-        # plt.scatter(peaks, signal[peaks], c='r')
+        # plt.scatter(peaks, signal[peaks], c='b')
         # plt.show()
         return peaks, signal[peaks]
     else:
@@ -131,7 +132,8 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
     for j in range(len(file_list)):
         ecg, ann = read_aharecord_reference(file_dir, file_list[j])
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
-        locations, peaks, time, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
+        start = time.time()
+        locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
         print(file_list[j])
 
         k = len(locations)
@@ -141,7 +143,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
         while i < k - 1:
 
-            state = recorrect.check_rr(locations[i], locations[i + 1], round(0.6 * AHA_sampled_freq))
+            state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * AHA_sampled_freq))
             if state:
                 l.append(locations[i])
                 l.append(locations[i + 1])
@@ -152,7 +154,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 pre_peaks = peaks[:i + 1]
                 post_peaks = peaks[i + 1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.3 * AHA_sampled_freq), ecg[locations[i]:locations[i + 1]], AHA_sampled_freq,
+                add_locs, add_peaks = recorrect.check_peak(round(0.25 * AHA_sampled_freq), ecg[locations[i]:locations[i + 1]], AHA_sampled_freq,
                                                            locations[i], locations[i + 1], peaks[i], sdiffs[i - 10:i],
                                                            slope_heights[i - 10:i])
                 n = len(add_locs)
@@ -162,6 +164,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
                 i += n
             i += 1
+        end = time.time()
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
         # filename = file_list[j] + ".mat"
         # savemat(filename, {'testann': np.array(locations), "refann": np.array(ref_locations)})
@@ -169,10 +172,13 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # print(data["testann"])
         # print(data["refann"])
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                 True, True)
+                                                                True, True)
+        print("TP: ", TP)
+        print("FP: ", FP)
+        print("FN: ", FN)
         if excel:
             ws1.append((file_list[j], len(locations), len(ref_locations), TP, FP,
-                                       FN, sensitivty, pp, DER, time))
+                                       FN, sensitivty, pp, DER, end-start))
         # plt.scatter(locations, peaks, c="g", marker="x")
         # plt.show()
     if excel:
@@ -180,6 +186,6 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = ["8201"]
+    check_file_list = ["7206"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)

@@ -40,7 +40,7 @@ for record in range(203, 204):
         plt.plot(t, heights)
         while i< k-1:
 
-            state = recorrect.check_rr(locations[i], locations[i+1], round(0.6*fs))
+            state = recorrect.check_rr(locations[i], locations[i+1], round(0.7*fs))
             if state:
 
                 l.append(locations[i])
@@ -52,7 +52,7 @@ for record in range(203, 204):
                 pre_peaks = peaks[:i+1]
                 post_peaks = peaks[i+1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.3 * fs), heights[locations[i]:locations[i+1]], fs, locations[i], locations[i+1], peaks[i], sdiffs[i-10:i], slope_heights[i-10:i])
+                add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[locations[i]:locations[i+1]], fs, locations[i], locations[i+1], peaks[i], sdiffs[i-10:i], slope_heights[i-10:i])
                 n = len(add_locs)
                 # plt.scatter(add_locs, add_peaks, color="black")
                 locations = pre_loc+add_locs+post_loc
