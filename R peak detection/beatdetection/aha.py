@@ -172,10 +172,10 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # print(data["testann"])
         # print(data["refann"])
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                                True, True)
-        print("TP: ", TP)
-        print("FP: ", FP)
-        print("FN: ", FN)
+                                                                False, False)
+        # print("TP: ", TP)
+        # print("FP: ", FP)
+        # print("FN: ", FN)
         if excel:
             ws1.append((file_list[j], len(locations), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, end-start))
@@ -186,6 +186,6 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = ["7206"]
+    check_file_list = list(AHA_records)
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)

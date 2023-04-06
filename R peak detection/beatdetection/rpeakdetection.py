@@ -278,7 +278,7 @@ def locate_r_peaks(
             locations.append(i)
             count += 1
 
-    for i in range(5*60*250, len(heights) + 1 - b):
+    for i in range(b, len(heights) + 1 - b):
     # while i < len(heights) + 1 - b :
         try:
 
@@ -291,6 +291,7 @@ def locate_r_peaks(
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
                 max_height, slope_heights)
+
 
             if qrs_complex:
                 element = max(np.absolute(heights[i - a:i + a + 1]))
