@@ -1,5 +1,6 @@
 import numpy as np
 import pywt
+import matplotlib.pyplot as plt
 from beatdetection import rpeakdetection
 from beatdetection import filters
 
@@ -8,6 +9,8 @@ from beatdetection import filters
 db1 = pywt.Wavelet('haar')
 template = []
 p_wave = []
+original = []
+p_loc = []
 
 
 def qrs(
@@ -48,6 +51,10 @@ def extract_p_waves(
 
     global template
     global p_wave
+    global original
+    global p_loc
+    onsets = []
+    onset_height = []
 
     try:
         size = 100
@@ -60,20 +67,29 @@ def extract_p_waves(
         ydr = filters.l_deriv(ymv)
 
         for i in range(len(locations) - 1):
-            onset_point = qrs(ydr, locations[i + 1])
+            onset_point = qrs(ymv, locations[i + 1])
+            onsets.append(onset_point)
+            onset_height.append(heights[onset_point])
+            T = round(360 * 0.4)
+            pre_onset = qrs(ymv, locations[i])
             rr = locations[i + 1] - locations[i]
-            second_half = heights[(locations[i] + rr // 2):onset_point + 1]
-            out = np.linspace(locations[i] + rr // 2, onset_point + 1, size)
-            xp = [m for m in range((locations[i] + rr // 2), onset_point + 1)]
+            second_half = heights[pre_onset+T:onset_point + 1]
+            out = np.linspace(pre_onset+T, onset_point + 1, size)
+            xp = [m for m in range(pre_onset+T, onset_point + 1)]
             yp = second_half
-            second_half = np.interp(out, xp, yp)
-            ca2, cd2, cd1 = pywt.wavedec(second_half, db1, mode='constant', level=2)
-            template.append(ca2)
+            if len(xp) != 0 and len(yp) != 0:
+                second_half = np.interp(out, xp, yp)
+                ca2, cd2, cd1 = pywt.wavedec(second_half, db1, mode='constant', level=2)
+                template.append(ca2)
 
-            maximum = np.max(ca2)
-            minimum = np.min(ca2)
-            z = np.array([(x - minimum) / (maximum - minimum) for x in ca2])
-            p_wave.append(z)
+                maximum = np.max(ca2)
+                minimum = np.min(ca2)
+                z = np.array([(x - minimum) / (maximum - minimum) for x in ca2])
+                p_wave.append(z)
+                original.append(yp)
+
+                p_loc.append(xp)
+        plt.scatter(onsets, onset_height, color="purple")
     except FileNotFoundError:
         print("File: ", record, "doesn't exist.")
     return None
@@ -107,7 +123,7 @@ def create_template(
 def p_waves(
         record: int,
         locations: list,
-        heights: list) -> list:
+        heights: list) -> tuple:
 
     """
 
@@ -117,7 +133,11 @@ def p_waves(
     :return: p waves of the record as a 2D array
     """
     global p_wave
+    global p_loc
+    global original
+    p_loc = []
+    original = []
     p_wave = []
     extract_p_waves(record, locations, heights)
 
-    return p_wave
+    return p_wave,  p_loc, original

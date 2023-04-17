@@ -23,8 +23,11 @@ if excel:
 
 
 for record in range(203, 204):
-    try:
 
+    try:
+        remove = [102, 104, 107, 217]
+        if record in remove:
+            continue
         # output_dir = folder + str(record)
         # folderhandling.mkdir_p(output_dir)
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
