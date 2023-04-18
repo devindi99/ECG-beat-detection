@@ -77,7 +77,7 @@ def read_annotations(
     # resampled = signal.resample_poly(heights, 250, 360)
     heights = filters.Low_pass(heights)
 
-    heights = filters.iir(heights, 0.65)
+    heights = filters.iir(heights, 2000)
     # baseObj = BaselineRemoval(heights)
     # Zhangfit_output = baseObj.ZhangFit()
     fs = fields["fs"]
@@ -277,9 +277,9 @@ def locate_r_peaks(
             peaks.append(heights[i])
             locations.append(i)
             count += 1
-
-    for i in range(b, len(heights) + 1 - b):
-    # while i < len(heights) + 1 - b :
+    i = b
+    # for i in range(b, len(heights) + 1 - b):
+    while i < len(heights) + 1 - b :
         try:
 
 
@@ -308,6 +308,7 @@ def locate_r_peaks(
                     peaks.append(heights[loc])
                     slope_heights.append(max_height)
                     sdiffs.append(sdiff_max)
+                    i = loc
 
                 else:
                     if sdiff_max > sdiffs[-1]:
@@ -315,6 +316,8 @@ def locate_r_peaks(
                         locations[-1] = loc
                         slope_heights[-1] = max_height
                         sdiffs[-1] = sdiff_max
+                        i = loc
+            i+=1
 
 
         except ValueError:

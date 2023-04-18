@@ -22,7 +22,7 @@ if excel:
     ws1.title = sheet
 
 
-for record in range(203, 204):
+for record in range(100, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -41,7 +41,8 @@ for record in range(203, 204):
         i = 0
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
-        while i< k-1:
+
+        while i < k-1:
 
             state = recorrect.check_rr(locations[i], locations[i+1], round(0.7*fs))
             if state:
@@ -64,7 +65,7 @@ for record in range(203, 204):
                 i += n
             i += 1
 
-        plt.scatter(l, p, color="orange")
+        # plt.scatter(l, p, color="orange")
 
         end = time.time()
         ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, fs)
@@ -77,10 +78,11 @@ for record in range(203, 204):
         # plt.scatter(locations, peaks, color="red", marker="x")
         # plt.show()
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                            True, True)
+                                                            False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
+        print(end-start)
 
         if excel:
             ws1.append((record, len(locations), len(ref_locations), TP, FP,
