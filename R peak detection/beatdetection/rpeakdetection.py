@@ -238,50 +238,81 @@ def third_criterion(
         h_avg = np.average(np.absolute(li[:]))
     return np.abs(cur_height) > h_avg * 0.4
 
+def third_criterion_re(
+        cur_height: float,
+        li: list) -> bool:
+    """
+
+    :param cur_height: slope height of the current sample
+    :param li: list of slope heights
+    :return: True -> sample validates third criterion, False -> otherwise
+    """
+    try:
+        h_avg = np.average(np.absolute(li[-8:]))
+    except IndexError:
+        h_avg = np.average(np.absolute(li[:]))
+    return np.abs(cur_height) > h_avg * 0.01
 
 def locate_r_peaks(
         heights: list,
         fs: int,
         c: int,
-        callibrate: bool) -> tuple:
+        callibrate: bool,
+        lo: list,
+        pe: list,
+        sl: list,
+        sd: list) -> tuple:
+
     """
-    :param record: name of the record as an integer
-    :param path: folder path where the record exist
-    :param n: time (seconds) up to which the ECG data will be analysed
-    :param ignore_afib: whether to ignore afib or not
-    :return: R peak locations and heights, time taken to complete the analysis
+
+    :param heights: sample heights
+    :param fs: sampling frequency
+    :param c: window that is considered as no two R peaks exist
+    :param callibrate:
+    :param lo:
+    :param pe:
+    :param sl:
+    :param sd:
+    :return:
     """
 
     global slope_heights
     global sdiffs
 
-    peaks = []
-    locations = []
+    peaks = pe.copy()
+    locations = lo.copy()
+    slope_heights = sl.copy()
+    sdiffs = sd.copy()
     l = []
     p = []
-    slope_heights = []
-    sdiffs = []
+
 
     count = 0
     b = round(0.063 * fs)
     # c = round(0.37 * fs)
     a = round(0.027 * fs)
-    m = b
+
     if callibrate:
         m = round(5*60*fs)+1
-    for i in range(m, m+(3 * fs)):
-        if initial(i, heights, fs):
-            # element = max(np.absolute(heights[i - b:i + b + 1]))
-            # loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
-            # loc = loc[0][0] + i - b
-            peaks.append(heights[i])
-            locations.append(i)
-            count += 1
+    else:
+        m = b
+
+    if len(locations) == 0:
+        for i in range(m, m+(3 * fs)):
+            if initial(i, heights, fs):
+                # element = max(np.absolute(heights[i - b:i + b + 1]))
+                # loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
+                # loc = loc[0][0] + i - b
+                peaks.append(heights[i])
+                locations.append(i)
+                # count += 1
+    count = len(locations)
 
 
     # for m in range(b, len(heights) + 1 - b):
 
     while m < len(heights) + 1 - b :
+
 
         try:
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(m, heights,
@@ -323,12 +354,12 @@ def locate_r_peaks(
 
         except ValueError:
             continue
-    if count>0:
-        locations = locations[count-1:]
-        peaks = peaks[count-1:]
+    if callibrate == False:
+        count = count-1
+
     # plt.scatter(l, p, color="red", marker="x")
 
-    return locations, peaks, count-1, sdiffs[count-1:], slope_heights[count-1:]
+    return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
 
 
 def new_r_peaks(
@@ -377,14 +408,17 @@ def new_r_peaks(
                                                          maximum_r_height)
             teeta = teeta_diff(sdiffs, fs)
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion(
-                max_height, slope_heights)
-            # if first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs):
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs)
+            if first_criterion(teeta, sdiff_max) :
+                element = max(np.absolute(heights[i - a:i + a + 1]))
+                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                loc = loc[0][0] + i - a
+                l.append(loc + begin_loc)
+                p.append(heights[loc])
 
 
             if qrs_complex:
-                l.append(i + begin_loc)
-                p.append(heights[i])
+
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
@@ -411,7 +445,7 @@ def new_r_peaks(
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-    plt.scatter(l, p, color="red", marker="x")
+    # plt.scatter(l, p, color="red", marker="o")
 
     return locations, peaks
 

@@ -27,7 +27,7 @@ def calibration(heights, fs):
     l = []
     p = []
 
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), False)
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
@@ -44,21 +44,23 @@ def calibration(heights, fs):
             post_peaks = peaks[i + 1:]
 
             add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[locations[i]:locations[i + 1]], fs,
-                                                       locations[i], locations[i + 1], peaks[i], sdiffs[i - 10:i],
-                                                       slope_heights[i - 10:i])
+                                                       locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
+                                                       slope_heights[:i+1])
+
             n = len(add_locs)
-            k += n
+
             locations = pre_loc + add_locs + post_loc
             peaks = pre_peaks + add_peaks + post_peaks
-
+            k += n
             i += n
         i += 1
-    plt.scatter(l, p, color="green")
+
     RR = []
     for m in range(len(locations)-1):
         RR.append(locations[m+1] - locations[m])
     avg_RR = np.average(RR)
-    return locations, peaks, round(avg_RR)
+    # plt.scatter(l, p, color="green")
+    return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
 for record in range(100, 235):
@@ -67,8 +69,6 @@ for record in range(100, 235):
         remove = [102, 104, 107, 217]
         if record in remove:
             continue
-        # output_dir = folder + str(record)
-        # folderhandling.mkdir_p(output_dir)
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         heights, fs = rpeakdetection.read_annotations(record, path)
         t = [i for i in range(len(heights))]
@@ -78,14 +78,11 @@ for record in range(100, 235):
         p = []
 
         start = time.time()
-        locations, peaks, d = calibration(heights[:5*60*fs+1], fs)
-        # plt.scatter(locations, peaks, color="black")
+        cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(heights[:5*60*fs+1], fs)
+        # plt.scatter(cal_locations, cal_peaks, color="blue")
         i = 0
-        # heights = heights[locations[-1]:]
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), True)
+        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs)
         plt.scatter(loc, pea, color="blue")
-        # locations = locations + loc
-        # peaks = peaks + pea
 
         k = len(loc)
 
@@ -104,8 +101,8 @@ for record in range(100, 235):
                 post_peaks = pea[i+1:]
 
                 add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[loc[i]:loc[i+1]], fs,
-                                                           loc[i], loc[i+1], pea[i], sdiffs[i-10:i],
-                                                           slope_heights[i-10:i])
+                                                           loc[i], loc[i+1], pea[i], sdiffs[:i],
+                                                           slope_heights[:i])
                 n = len(add_locs)
                 # plt.scatter(add_locs, add_peaks, color="black")
                 loc = pre_loc+add_locs+post_loc
@@ -114,50 +111,30 @@ for record in range(100, 235):
                 i += n
             i += 1
 
-        # plt.scatter(l, p, color="red")
-        locations = locations + loc
-        peaks = peaks + pea
+        plt.scatter(l, p, color="red", marker="o")
+        loc = cal_locations + loc
+        pea = cal_peaks + pea
         end = time.time()
+
         ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, fs)
         for m in range(len(a_fib)):
-            if a_fib[m] in locations:
-                o = locations.index(a_fib[m])
-                locations.remove(a_fib[m])
-                del peaks[o]
+            if a_fib[m] in loc:
+                o = loc.index(a_fib[m])
+                loc.remove(a_fib[m])
+                del pea[o]
 
         # plt.scatter(locations, peaks, color="red", marker="x")
         # plt.show()
-        TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
-                                                            False, False)
+        TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
+                                                            True, True)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
         print(end-start)
 
         if excel:
-            ws1.append((record, len(locations), len(ref_locations), TP, FP,
+            ws1.append((record, len(loc), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, end-start))
-
-        # template = ptemplate.create_template([record], locations, heights)
-        # t = [m for m in range(len(template))]
-        # plt.figure()
-        # plt.plot(t, template)
-        # filename = str(record) + "template.png"
-        # imagepath = output_dir + "/" + filename
-        # plt.savefig(imagepath)
-        # plt.close()
-        # pwaves = ptemplate.p_waves(record, locations, heights)
-        # for m in range(len(pwaves)):
-        #     p = pwaves[m]
-        #     distance = dtw.distance(p, template)
-        #     if distance > 2.5:
-        #         plt.figure()
-        #         T = [m for m in range(len(p))]
-        #         plt.plot(T, p)
-        #         filename = str(record) + "distance " + str(distance) + ".png"
-        #         imagepath = output_dir + "/" + filename
-        #         plt.savefig(imagepath)
-        #         plt.close()
     except FileNotFoundError:
         continue
 if excel:
