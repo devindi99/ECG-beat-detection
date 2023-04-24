@@ -206,6 +206,7 @@ def second_criterion(
     else:
         return False
 
+
 def second_criterion_re(
         smin: float,
         state: bool,
@@ -237,6 +238,7 @@ def third_criterion(
     except IndexError:
         h_avg = np.average(np.absolute(li[:]))
     return np.abs(cur_height) > h_avg * 0.4
+
 
 def third_criterion_re(
         cur_height: float,
@@ -357,7 +359,7 @@ def locate_r_peaks(
     if callibrate == False:
         count = count-1
 
-    # plt.scatter(l, p, color="red", marker="x")
+    plt.scatter(l, p, color="blue", marker="x")
 
     return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
 
@@ -408,13 +410,15 @@ def new_r_peaks(
                                                          maximum_r_height)
             teeta = teeta_diff(sdiffs, fs)
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs)
-            if first_criterion(teeta, sdiff_max) :
-                element = max(np.absolute(heights[i - a:i + a + 1]))
-                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
-                loc = loc[0][0] + i - a
-                l.append(loc + begin_loc)
-                p.append(heights[loc])
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion(
+                max_height, slope_heights)
+            # if first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and  third_criterion(
+            #     max_height, slope_heights):
+            #     element = max(np.absolute(heights[i - a:i + a + 1]))
+            #     loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+            #     loc = loc[0][0] + i - a
+            #     l.append(loc + begin_loc)
+            #     p.append(heights[loc])
 
 
             if qrs_complex:
@@ -445,7 +449,7 @@ def new_r_peaks(
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-    # plt.scatter(l, p, color="red", marker="o")
+    plt.scatter(l, p, color="red", marker="x")
 
     return locations, peaks
 

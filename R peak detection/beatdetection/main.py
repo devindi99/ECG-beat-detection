@@ -63,7 +63,7 @@ def calibration(heights, fs):
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(100, 235):
+for record in range(208, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -82,7 +82,7 @@ for record in range(100, 235):
         # plt.scatter(cal_locations, cal_peaks, color="blue")
         i = 0
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs)
-        plt.scatter(loc, pea, color="blue")
+        # plt.scatter(loc, pea, color="blue")
 
         k = len(loc)
 

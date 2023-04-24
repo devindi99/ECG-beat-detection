@@ -125,6 +125,46 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
         ValueError('Check input array dimensions ')
 
 
+def calibration(heights, fs):
+    l = []
+    p = []
+
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), False, [], [], [], [])
+    k = len(locations)
+    i = 0
+
+    while i < k - 1:
+        state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * fs))
+        if state:
+            l.append(locations[i])
+            l.append(locations[i + 1])
+            p.append(peaks[i])
+            p.append(peaks[i + 1])
+            pre_loc = locations[:i + 1]
+            post_loc = locations[i + 1:]
+            pre_peaks = peaks[:i + 1]
+            post_peaks = peaks[i + 1:]
+
+            add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[locations[i]:locations[i + 1]], fs,
+                                                       locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
+                                                       slope_heights[:i+1])
+
+            n = len(add_locs)
+
+            locations = pre_loc + add_locs + post_loc
+            peaks = pre_peaks + add_peaks + post_peaks
+            k += n
+            i += n
+        i += 1
+
+    RR = []
+    for m in range(len(locations)-1):
+        RR.append(locations[m+1] - locations[m])
+    avg_RR = np.average(RR)
+    # plt.scatter(l, p, color="green")
+    return locations, peaks, round(avg_RR), slope_heights, sdiffs
+
+
 def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None) -> None:
     global AHA_records, AHA_sampled_freq
     if file_list is None:
@@ -133,37 +173,44 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         ecg, ann = read_aharecord_reference(file_dir, file_list[j])
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
         start = time.time()
-        locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
+        cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
+        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.375 *  AHA_sampled_freq ), True,
+                                                                               cal_locations, cal_peaks, slope_heights,
+                                                                               sdiffs)
+        # locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
         print(file_list[j])
 
-        k = len(locations)
+        k = len(loc)
         i = 0
         l = []
         p = []
 
+
         while i < k - 1:
-
-            state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * AHA_sampled_freq))
+            state = recorrect.check_rr(loc[i], loc[i + 1], d)
             if state:
-                l.append(locations[i])
-                l.append(locations[i + 1])
-                p.append(peaks[i])
-                p.append(peaks[i + 1])
-                pre_loc = locations[:i + 1]
-                post_loc = locations[i + 1:]
-                pre_peaks = peaks[:i + 1]
-                post_peaks = peaks[i + 1:]
+                l.append(loc[i])
+                l.append(loc[i + 1])
+                p.append(pea[i])
+                p.append(pea[i + 1])
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.25 * AHA_sampled_freq), ecg[locations[i]:locations[i + 1]], AHA_sampled_freq,
-                                                           locations[i], locations[i + 1], peaks[i], sdiffs[i - 10:i],
-                                                           slope_heights[i - 10:i])
+                pre_loc = loc[:i + 1]
+                post_loc = loc[i + 1:]
+                pre_peaks = pea[:i + 1]
+                post_peaks = pea[i + 1:]
+
+                add_locs, add_peaks = recorrect.check_peak(round(0.25 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
+                                                           loc[i], loc[i + 1], pea[i], sdiffs[:i],
+                                                           slope_heights[:i])
                 n = len(add_locs)
                 # plt.scatter(add_locs, add_peaks, color="black")
-                locations = pre_loc + add_locs + post_loc
-                peaks = pre_peaks + add_peaks + post_peaks
-
+                loc = pre_loc + add_locs + post_loc
+                pea = pre_peaks + add_peaks + post_peaks
+                k += n
                 i += n
             i += 1
+        loc = cal_locations + loc
+        pea = cal_peaks + pea
         end = time.time()
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
         # filename = file_list[j] + ".mat"
@@ -171,13 +218,13 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # data = loadmat(filename)
         # print(data["testann"])
         # print(data["refann"])
-        TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, locations, peaks,
+        TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
                                                                 False, False)
         # print("TP: ", TP)
         # print("FP: ", FP)
         # print("FN: ", FN)
         if excel:
-            ws1.append((file_list[j], len(locations), len(ref_locations), TP, FP,
+            ws1.append((file_list[j], len(loc), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, end-start))
         # plt.scatter(locations, peaks, c="g", marker="x")
         # plt.show()
