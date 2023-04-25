@@ -359,7 +359,7 @@ def locate_r_peaks(
     if callibrate == False:
         count = count-1
 
-    plt.scatter(l, p, color="blue", marker="x")
+    # plt.scatter(l, p, color="blue", marker="x")
 
     return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
 
@@ -449,7 +449,7 @@ def new_r_peaks(
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-    plt.scatter(l, p, color="red", marker="x")
+    # plt.scatter(l, p, color="red", marker="x")
 
     return locations, peaks
 

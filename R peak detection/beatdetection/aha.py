@@ -21,6 +21,7 @@ from beatdetection import rpeakdetection
 from beatdetection import beatpair
 from openpyxl import Workbook
 from beatdetection import recorrect
+from beatdetection import filters
 import time
 
 excel = int(input("Write accuracy values to a XL sheet? "))
@@ -115,9 +116,9 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
     """
     if annotation.ndim == 2:
         peaks = annotation[:, 0]
-        plt.figure(1)
-        plt.title(f'AHA record {record}: ECG signal with peaks')
-        plt.plot(signal)
+        # plt.figure(1)
+        # plt.title(f'AHA record {record}: ECG signal with peaks')
+        # plt.plot(signal)
         # plt.scatter(peaks, signal[peaks], c='b')
         # plt.show()
         return peaks, signal[peaks]
@@ -171,7 +172,16 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         file_list = AHA_records
     for j in range(len(file_list)):
         ecg, ann = read_aharecord_reference(file_dir, file_list[j])
+        t = [i for i in range(len(ecg))]
+        plt.plot(t, ecg)
+        plt.title(f'AHA record {file_list[j]}: ECG signal with peaks')
+        # plt.show()
+        ecg = filters.Low_pass(ecg)
+        ecg = filters.iir(ecg, 2000)
+        t = [i for i in range(len(ecg))]
+        plt.plot(t, ecg)
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
+        ecg = ecg[:ref_locations[-1]+40]
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.375 *  AHA_sampled_freq ), True,
@@ -209,8 +219,8 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 k += n
                 i += n
             i += 1
-        loc = cal_locations + loc
-        pea = cal_peaks + pea
+        # loc = cal_locations + loc
+        # pea = cal_peaks + pea
         end = time.time()
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
         # filename = file_list[j] + ".mat"
@@ -220,9 +230,9 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # print(data["refann"])
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
                                                                 False, False)
-        # print("TP: ", TP)
-        # print("FP: ", FP)
-        # print("FN: ", FN)
+        print("TP: ", TP)
+        print("FP: ", FP)
+        print("FN: ", FN)
         if excel:
             ws1.append((file_list[j], len(loc), len(ref_locations), TP, FP,
                                        FN, sensitivty, pp, DER, end-start))
@@ -234,5 +244,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 if __name__ == '__main__':
     check_file_list = list(AHA_records)
+    # check_file_list = ["2204", "4206", "5201", "7205", "7206",
+    #            "7209", "8202", "8206", "8207", "8209", "8210"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
