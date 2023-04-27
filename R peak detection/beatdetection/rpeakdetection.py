@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 from BaselineRemoval import BaselineRemoval
 from beatdetection import filters
+from scipy import  signal
 from beatdetection import beatpair
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
@@ -422,7 +423,8 @@ def new_r_peaks(
 
 
             if qrs_complex:
-
+                l.append(i+begin_loc)
+                p.append(heights[i])
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
@@ -449,7 +451,7 @@ def new_r_peaks(
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-    # plt.scatter(l, p, color="red", marker="x")
+    plt.scatter(l, p, color="red")
 
     return locations, peaks
 

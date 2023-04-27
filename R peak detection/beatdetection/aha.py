@@ -23,6 +23,7 @@ from openpyxl import Workbook
 from beatdetection import recorrect
 from beatdetection import filters
 import time
+from scipy import signal
 
 excel = int(input("Write accuracy values to a XL sheet? "))
 if excel:
@@ -77,8 +78,8 @@ def aha_ann_process(refpeak: npt.NDArray, reftype: npt.NDArray) -> Tuple[npt.NDA
             beattype[beatidx] = 255
 
     delidx_beat = np.where(np.logical_or(beattype == 255, beattype == 31) == True)
-    beatpos = np.delete(beatpos.astype(int), delidx_beat).reshape((-1, 1))
-    beattype = np.delete(beattype.astype(int), delidx_beat).reshape((-1, 1))
+    # beatpos = np.delete(beatpos.astype(int), delidx_beat).reshape((-1, 1))
+    # beattype = np.delete(beattype.astype(int), delidx_beat).reshape((-1, 1))
 
     return beatpos, beattype
 
@@ -176,17 +177,32 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         plt.plot(t, ecg)
         plt.title(f'AHA record {file_list[j]}: ECG signal with peaks')
         # plt.show()
+
+
         ecg = filters.Low_pass(ecg)
         ecg = filters.iir(ecg, 2000)
+
         t = [i for i in range(len(ecg))]
         plt.plot(t, ecg)
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
-        ecg = ecg[:ref_locations[-1]+40]
+        vfib=[]
+        for i in range(len(ann)):
+            if ann[i][1] == 32:
+                try:
+                    for m in range(ann[i][0],ann[i+1][0]):
+                        vfib.append(m)
+                    # d = [m for m in range(ann[i][0],ann[i+1][0])]
+                except IndexError:
+                    for m in range(ann[i][0], len(ecg)):
+                        vfib.append(m)
+                # ecg = np.delete(ecg, d)
+        # ecg = ecg[:ref_locations[-1]+40]
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.375 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
+        # plt.scatter(loc, pea, color="red")
         # locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
         print(file_list[j])
 
@@ -213,7 +229,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                                                            loc[i], loc[i + 1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
-                # plt.scatter(add_locs, add_peaks, color="black")
+                # plt.scatter(add_locs, add_peaks, color="red")
                 loc = pre_loc + add_locs + post_loc
                 pea = pre_peaks + add_peaks + post_peaks
                 k += n
@@ -221,6 +237,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
             i += 1
         # loc = cal_locations + loc
         # pea = cal_peaks + pea
+        plt.scatter(l, p, color="blue")
         end = time.time()
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
         # filename = file_list[j] + ".mat"
@@ -228,8 +245,13 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # data = loadmat(filename)
         # print(data["testann"])
         # print(data["refann"])
+        for m in range(len(vfib)):
+            if vfib[m] in loc:
+                o = loc.index(vfib[m])
+                loc.remove(vfib[m])
+                del pea[o]
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                False, False)
+                                                                True, True)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -243,8 +265,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = list(AHA_records)
-    # check_file_list = ["2204", "4206", "5201", "7205", "7206",
-    #            "7209", "8202", "8206", "8207", "8209", "8210"]
+    # check_file_list = list(AHA_records)
+    check_file_list = ["8207", "8209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
