@@ -98,7 +98,7 @@ def read_aharecord_reference(directory: str, record: str) -> Tuple[npt.NDArray, 
         refdata = loadmat(signalfile)
         beatdata = loadmat(beatfile)
         peakdata = loadmat(rpeakfile)
-        signal = refdata['M'][:, 0].reshape((-1, 1))
+        signal = refdata['M'][:, 1].reshape((-1, 1))
 
         beattype_init = beatdata['ANNOT']
         peaks_init = peakdata['ATRTIME'] + 5

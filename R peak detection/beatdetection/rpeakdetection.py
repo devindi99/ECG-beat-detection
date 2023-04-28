@@ -428,10 +428,6 @@ def new_r_peaks(
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
-                # locations.append(loc+begin_loc)
-                # peaks.append(heights[loc])
-                # slope_heights.append(max_height)
-                # sdiffs.append(sdiff_max)
                 if loc+begin_loc + c < end_loc:
                     if loc+begin_loc - c > locations[-1]:
                         locations.append(loc+begin_loc)
