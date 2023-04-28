@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import time
 from BaselineRemoval import BaselineRemoval
 from beatdetection import filters
-from scipy import  signal
+from scipy import signal
 from beatdetection import beatpair
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
@@ -73,8 +73,6 @@ def read_annotations(
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
-    # t = [i for i in range(len(heights))]
-    # plt.plot(t, heights)
     # resampled = signal.resample_poly(heights, 250, 360)
     heights = filters.Low_pass(heights)
 
@@ -334,10 +332,6 @@ def locate_r_peaks(
                 loc = loc[0][0] + m - a
                 l.append(loc)
                 p.append(heights[loc])
-                # locations.append(loc)
-                # peaks.append(heights[loc])
-                # slope_heights.append(max_height)
-                # sdiffs.append(sdiff_max)
                 if loc - c > locations[-1]:
                     locations.append(loc)
                     peaks.append(heights[loc])
