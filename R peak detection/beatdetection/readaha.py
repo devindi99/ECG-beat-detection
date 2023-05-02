@@ -22,6 +22,7 @@ from beatdetection import beatpair
 from openpyxl import Workbook
 from beatdetection import recorrect
 from beatdetection import filters
+
 import time
 from scipy import signal
 
@@ -180,7 +181,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # plt.show()
 
         signal_other = filters.Low_pass(signal_other)
-        signal_other = filters.iir(signal_other)
+        signal_other = filters.iir(signal_other, 2000)
         ecg = filters.Low_pass(ecg)
         ecg = filters.iir(ecg, 2000)
         t1 = [i for i in range(len(signal_other))]
