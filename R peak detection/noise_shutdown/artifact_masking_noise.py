@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from noise_shutdown.SQI_noise import negentropy, compute_noise_ind
 
 
-print_test = False
+print_test = True
 
 
 def rail_mask(raw_ecg):
@@ -286,6 +286,7 @@ def final_noise_ind(raw_ecg, fs, peak_indicies, corr_val):
         derv_mask = second_derv_noise(raw_ecg, fs)
         final_mask = np.zeros(np.shape(peak_indicies))
         neg_mask = negen_mask(raw_ecg,fs)
+        peak_indicies = np.asarray(peak_indicies)
         if len(peak_indicies) > 0:
             hf_peaks = hf_mask[peak_indicies]  # converting the segment mask and annotating to each peak index
             lf_peaks = lf_mask[peak_indicies]  # converting the segment mask and annotating to each peak index
@@ -328,14 +329,16 @@ def final_noise_ind(raw_ecg, fs, peak_indicies, corr_val):
                 plt.plot(neg_mask)
                 plt.title(f'Shutdown percentage {np.sum(final_mask)*100/np.size(final_mask):0.3f}%')
                 fig2 = plt.figure(2)
-                plt.subplot(4, 1, 1)
+                plt.subplot(5, 1, 1)
                 plt.plot(raw_ecg)
-                plt.subplot(4, 1, 2)
+                plt.subplot(5, 1, 2)
                 plt.plot(hf_mask)
-                plt.subplot(4, 1, 3)
+                plt.subplot(5, 1, 3)
                 plt.plot(hf_sum)
-                plt.subplot(4, 1, 4)
+                plt.subplot(5, 1, 4)
                 plt.plot(hf_std)
+                plt.subplot(5, 1, 5)
+                plt.plot(final_mask)
                 plt.show()
         return final_mask
     else:

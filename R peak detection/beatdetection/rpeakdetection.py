@@ -252,7 +252,7 @@ def third_criterion_re(
         h_avg = np.average(np.absolute(li[-8:]))
     except IndexError:
         h_avg = np.average(np.absolute(li[:]))
-    return np.abs(cur_height) > h_avg * 0.01
+    return np.abs(cur_height) > h_avg * 0.3
 
 def locate_r_peaks(
         heights: list,
@@ -322,7 +322,7 @@ def locate_r_peaks(
                                                          maximum_r_height)
             teeta = teeta_diff(sdiffs, fs)
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion_re(
                 max_height, slope_heights)
 
 
@@ -405,20 +405,20 @@ def new_r_peaks(
                                                          maximum_r_height)
             teeta = teeta_diff(sdiffs, fs)
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion(
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion_re(
                 max_height, slope_heights)
-            # if first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and  third_criterion(
-            #     max_height, slope_heights):
-            #     element = max(np.absolute(heights[i - a:i + a + 1]))
-            #     loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
-            #     loc = loc[0][0] + i - a
-            #     l.append(loc + begin_loc)
-            #     p.append(heights[loc])
+            if first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion_re(
+                max_height, slope_heights):
+                element = max(np.absolute(heights[i - a:i + a + 1]))
+                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                loc = loc[0][0] + i - a
+                l.append(loc + begin_loc)
+                p.append(heights[loc])
 
 
             if qrs_complex:
-                l.append(i+begin_loc)
-                p.append(heights[i])
+                # l.append(i+begin_loc)
+                # p.append(heights[i])
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
