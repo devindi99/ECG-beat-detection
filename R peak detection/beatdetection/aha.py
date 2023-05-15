@@ -132,7 +132,7 @@ def calibration(heights, fs):
     l = []
     p = []
 
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.45* fs), False, [], [], [], [])
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
@@ -148,7 +148,7 @@ def calibration(heights, fs):
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.3 * fs), heights[locations[i]:locations[i + 1]], fs,
+            add_locs, add_peaks = recorrect.check_peak(round(0.2 * fs), heights[locations[i]:locations[i + 1]], fs,
                                                        locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
                                                        slope_heights[:i+1])
 
@@ -200,7 +200,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         # ecg = ecg[:ref_locations[-1]+40]
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.45 *  AHA_sampled_freq ), True,
+        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
         # plt.scatter(loc, pea, color="red")
@@ -211,7 +211,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         i = 0
         l = []
         p = []
-
+        # plt.scatter(loc, pea, color="red", marker="o")
 
         while i < k - 1:
             state = recorrect.check_rr(loc[i], loc[i + 1], d)
@@ -226,7 +226,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 pre_peaks = pea[:i + 1]
                 post_peaks = pea[i + 1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.3 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
+                add_locs, add_peaks = recorrect.check_peak(round(0.2 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
                                                            loc[i], loc[i + 1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
@@ -238,7 +238,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
             i += 1
         # loc = cal_locations + loc
         # pea = cal_peaks + pea
-        # plt.scatter(l, p, color="blue")
+        plt.scatter(l, p, color="blue")
         end = time.time()
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
         # filename = file_list[j] + ".mat"
@@ -253,7 +253,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 del pea[o]
         # mask = artifact_masking_noise.identify_noise(ecg, ecg1, loc, AHA_sampled_freq)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                True, True)
+                                                                False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -267,7 +267,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    # check_file_list = list(AHA_records)
-    check_file_list = ["4207", "5201", "7209", "8202", "8203", "8207", "8209"]
+    check_file_list = list(AHA_records)
+    # check_file_list = ["3204", "8203", "8206", "8209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)

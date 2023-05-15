@@ -18,7 +18,7 @@ def Low_pass(
             y[i] = 2 * y[i - 1] + x[i] - y[i - 2] - 2 * x[i - 6]
         if i >= 12:
             y[i] = 2 * y[i - 1] + x[i] - y[i - 2] - 2 * x[i - 6] + x[i - 12]
-    return delay_com(y / 36, 5)
+    return delay_com(y / 36, 4)
 
 
 def delay_com(

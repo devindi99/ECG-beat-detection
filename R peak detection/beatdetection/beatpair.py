@@ -2,6 +2,7 @@ import wfdb
 import numpy as np
 from beatdetection import rpeakdetection
 from beatdetection import plot
+from scipy import signal
 
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\"", "!"]
 
@@ -19,7 +20,8 @@ def read_annotations(
     signals, fields = wfdb.rdsamp(path, channels=[0])
     annotations = wfdb.rdann(path, 'atr')
     heights = [signals[i][0] for i in range(len(signals))]
-    return annotations, heights
+    resampled = signal.resample_poly(heights, 250, 360)
+    return annotations, resampled
 
 
 def beat_pair(refannot, testannot, fs=360):
@@ -137,17 +139,18 @@ def ref_annotate(
             s = 0
             e = 0
             if ann.symbol[i] == "[":
-                s = ann.sample[i]
+                s = round(ann.sample[i]*250/360)
                 while ann.symbol[i] != "]":
-                    e = ann.sample[i]
+                    e = round(ann.sample[i]*250/360)
                     i += 1
             for m in range(s, e):
                 a_fib.append(m)
             if ann.symbol[i] in remove_sym:
                 continue
             else:
-                ref_ann.append(heights[ann.sample[i]])
-                ref_loc.append(ann.sample[i])
+                # print(round(ann.sample[i]*250/360))
+                ref_ann.append(heights[round(ann.sample[i]*250/360)])
+                ref_loc.append(round(ann.sample[i]*250/360))
 
         ref_locations = np.array(ref_loc)
         ref_annotations = np.array(ref_ann)

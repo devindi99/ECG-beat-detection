@@ -27,7 +27,7 @@ def calibration(heights, fs):
     l = []
     p = []
 
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), False, [], [], [], [])
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
@@ -43,7 +43,7 @@ def calibration(heights, fs):
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[locations[i]:locations[i + 1]], fs,
+            add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[locations[i]:locations[i + 1]], fs,
                                                        locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
                                                        slope_heights[:i+1])
 
@@ -56,6 +56,7 @@ def calibration(heights, fs):
         i += 1
 
     RR = []
+    plt.scatter(l, p, color="green", marker="o")
     for m in range(len(locations)-1):
         RR.append(locations[m+1] - locations[m])
     avg_RR = np.average(RR)
@@ -63,7 +64,7 @@ def calibration(heights, fs):
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(208, 235):
+for record in range(100, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -79,9 +80,10 @@ for record in range(208, 235):
 
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(heights[:5*60*fs+1], fs)
+        print(d/fs)
         # plt.scatter(cal_locations, cal_peaks, color="blue")
         i = 0
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs)
+        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs)
         # plt.scatter(loc, pea, color="blue")
 
         k = len(loc)
@@ -100,7 +102,7 @@ for record in range(208, 235):
                 pre_peaks = pea[:i+1]
                 post_peaks = pea[i+1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[loc[i]:loc[i+1]], fs,
+                add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[loc[i]:loc[i+1]], fs,
                                                            loc[i], loc[i+1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
@@ -111,7 +113,7 @@ for record in range(208, 235):
                 i += n
             i += 1
 
-        plt.scatter(l, p, color="red", marker="o")
+        # plt.scatter(l, p, color="green", marker="o")
         loc = cal_locations + loc
         pea = cal_peaks + pea
         end = time.time()
@@ -126,7 +128,7 @@ for record in range(208, 235):
         # plt.scatter(locations, peaks, color="red", marker="x")
         # plt.show()
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
-                                                            True, True)
+                                                           False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
