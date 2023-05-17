@@ -131,8 +131,8 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
 def calibration(heights, fs):
     l = []
     p = []
-
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
+    b = round(0.063 * fs)
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [],len(heights) + 1 - b)
     k = len(locations)
     i = 0
 
@@ -148,7 +148,7 @@ def calibration(heights, fs):
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.2 * fs), heights[locations[i]:locations[i + 1]], fs,
+            add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[locations[i]:locations[i + 1]], fs,
                                                        locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
                                                        slope_heights[:i+1])
 
@@ -199,10 +199,11 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 # ecg = np.delete(ecg, d)
         # ecg = ecg[:ref_locations[-1]+40]
         start = time.time()
+        b = round(0.063 * AHA_sampled_freq)
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
-                                                                               sdiffs)
+                                                                               sdiffs, len(ecg) + 1 - b)
         # plt.scatter(loc, pea, color="red")
         # locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
         print(file_list[j])
@@ -226,7 +227,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 pre_peaks = pea[:i + 1]
                 post_peaks = pea[i + 1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.2 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
+                add_locs, add_peaks = recorrect.check_peak(round(0.28 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
                                                            loc[i], loc[i + 1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
