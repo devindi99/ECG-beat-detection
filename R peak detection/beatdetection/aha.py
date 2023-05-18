@@ -131,8 +131,8 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
 def calibration(heights, fs):
     l = []
     p = []
-    b = round(0.063 * fs)
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [],len(heights) + 1 - b)
+
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
@@ -199,11 +199,10 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 # ecg = np.delete(ecg, d)
         # ecg = ecg[:ref_locations[-1]+40]
         start = time.time()
-        b = round(0.063 * AHA_sampled_freq)
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
-                                                                               sdiffs, len(ecg) + 1 - b)
+                                                                               sdiffs)
         # plt.scatter(loc, pea, color="red")
         # locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
         print(file_list[j])

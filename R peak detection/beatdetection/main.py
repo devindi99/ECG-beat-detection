@@ -26,8 +26,11 @@ if excel:
 def calibration(heights, fs):
     l = []
     p = []
-    b = round(0.063 * fs)
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), False, [], [], [], [], len(heights) + 1 - b, b)
+    sq = 0
+    de = 0
+    locations, peaks, count, sdiffs, slope_heights, sq_thresh, de_thresh = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), False, [], [], [], [], sig, denoised, sq, de)
+    # print(sq_thresh, "    ", de_thresh)
+
     k = len(locations)
     i = 0
 
@@ -43,9 +46,9 @@ def calibration(heights, fs):
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.3 * fs), heights[locations[i]:locations[i + 1]], fs,
+            add_locs, add_peaks = recorrect.check_peak(round(0.2 * fs), heights[locations[i]:locations[i + 1]], fs,
                                                        locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
-                                                       slope_heights[:i+1])
+                                                       slope_heights[:i+1], sig[locations[i]:locations[i + 1]], denoised[locations[i]:locations[i + 1]], sq_thresh, de_thresh)
 
             n = len(add_locs)
 
@@ -61,7 +64,7 @@ def calibration(heights, fs):
         RR.append(locations[m+1] - locations[m])
     avg_RR = np.average(RR)
     # plt.scatter(l, p, color="green")
-    return locations, peaks, round(avg_RR), slope_heights, sdiffs
+    return locations, peaks, round(avg_RR), slope_heights, sdiffs, sq_thresh, de_thresh
 
 
 for record in range(202, 235):
@@ -71,30 +74,27 @@ for record in range(202, 235):
         if record in remove:
             continue
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
-        heights, fs = rpeakdetection.read_annotations(record, path)
-        b = round(0.063 * fs)
-        # fir = [0, 0, 0, 0, 0, 0]
-        # for i in range(6, len(heights)):
-        #     fir.append(heights[i] - heights[i - 6])
+        heights, sig, denoised, fs = rpeakdetection.read_annotations(record, path)
         t = [i for i in range(len(heights))]
-        plt.plot(t,heights)
+        plt.plot(t, heights)
         print(record)
         l = []
         p = []
 
         start = time.time()
-        cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(heights[:5*60*fs+1], fs)
-        print(d/fs)
+        cal_locations, cal_peaks, d, slope_heights, sdiffs, sq_thresh, de_thresh = calibration(heights[:5*60*fs+1], fs)
+
         # plt.scatter(cal_locations, cal_peaks, color="blue")
         i = 0
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs, len(heights) + 1 - b, b)
+
+        loc, pea, count, sdiffs, slope_heights, __, _ = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs, sig, denoised, 0, 0)
         # plt.scatter(loc, pea, color="blue")
 
         k = len(loc)
 
         while i < k-1:
 
-            state = recorrect.check_rr(loc[i], loc[i+1], d)
+            state = recorrect.check_rr(loc[i], loc[i+1],  d)
             if state:
                 l.append(loc[i])
                 l.append(loc[i+1])
@@ -106,9 +106,9 @@ for record in range(202, 235):
                 pre_peaks = pea[:i+1]
                 post_peaks = pea[i+1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.3 * fs), heights[loc[i]:loc[i+1]], fs,
+                add_locs, add_peaks = recorrect.check_peak(round(0.2 * fs), heights[loc[i]:loc[i+1]], fs,
                                                            loc[i], loc[i+1], pea[i], sdiffs[:i],
-                                                           slope_heights[:i])
+                                                           slope_heights[:i], sig[loc[i]:loc[i+1]], denoised[loc[i]:loc[i+1]], sq_thresh/2, de_thresh/2)
                 n = len(add_locs)
                 # plt.scatter(add_locs, add_peaks, color="black")
                 loc = pre_loc+add_locs+post_loc
@@ -145,4 +145,3 @@ for record in range(202, 235):
         continue
 if excel:
     wb.save(name)
-

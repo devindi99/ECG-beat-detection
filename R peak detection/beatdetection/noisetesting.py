@@ -14,7 +14,7 @@ if excel:
     sheet = input("Enter sheet name: ")
     ws1 = wb.create_sheet("Mysheet")
     ws1.title = sheet
-for record in range(105, 235):
+for record in range(108, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -25,10 +25,12 @@ for record in range(105, 235):
         heights, fs = rpeakdetection.read_annotations(record, path)
         t = [i for i in range(len(heights))]
         # plt.plot(t, heights)
-
-        fir = [0,0,0,0,0,0]
-        for i in range(6, len(heights)):
-            fir.append(heights[i] - heights[i-6])
+        k = round(fs / 60)
+        fir = []
+        for i in range(k):
+            fir.append(0)
+        for i in range(k, len(heights)):
+            fir.append(heights[i] - heights[i-k])
         t = [i for i in range(len(fir))]
         # plt.plot(t, fir)
         sig = [fir[i]**2 for i in range(len(fir))]
@@ -45,23 +47,23 @@ for record in range(105, 235):
             denoised.append(new / window)
         print(record)
         t = [i for i in range(len(denoised))]
-        # plt.plot(t, denoised)
-        normalized = []
-        ymin= min(denoised)
-        ymax=max(denoised)
-        for i in range(len(denoised)):
-            normalized.append((denoised[i]-ymin)/(ymax-ymin))
-        t = [i for i in range(len(normalized))]
-        plt.plot(t, normalized)
+        plt.plot(t, denoised)
+        # normalized = []
+        # ymin= min(denoised)
+        # ymax=max(denoised)
+        # for i in range(len(denoised)):
+        #     normalized.append((denoised[i]-ymin)/(ymax-ymin))
+        # t = [i for i in range(len(normalized))]
+        # plt.plot(t, normalized)
 
         potentials = []
         i=0
-        while i<len(normalized):
+        while i<len(denoised):
             # print(i)
-            if normalized[i] > 0.1:
+            if denoised[i] > 0.01:
                 potentials.append(i)
-                for m in range(i, len(normalized)):
-                    if normalized[m] < 0.01:
+                for m in range(i, len(denoised)):
+                    if denoised[m] < 0.01:
                         i = m
                         break
             i += 1
@@ -73,7 +75,7 @@ for record in range(105, 235):
         hi = []
         for m in potentials:
             # print(locations)
-            locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.35*fs), False, locations, peaks, slope_heights, sdiffs, m+100, m)
+            locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.4*fs), False, locations, peaks, slope_heights, sdiffs, m+100, m)
             hi. append(heights[m])
 
         plt. scatter(potentials, hi, color="red", marker='x')
