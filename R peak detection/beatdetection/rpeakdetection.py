@@ -31,11 +31,11 @@ def initial(
                                                      maximum_r_height)
 
         if samples[n] > 20.480 / fs:
-            teeta = 7.680 / fs
+            teeta = 9.680 / fs
         elif 2.800 / fs < samples[n] < 20.480 / fs:
-            teeta = 4.352 / fs
+            teeta = 6.352 / fs
         else:
-            teeta = 3.840 / fs
+            teeta = 5.840 / fs
 
         first = sdiff_max > teeta
 
@@ -48,7 +48,7 @@ def initial(
                 smin = min(np.abs(maximum_r), np.abs(minimum_l))
                 state = (np.sign(maximum_r) == -1 * np.sign(minimum_l))
 
-            if smin > 1.536 / fs and state:
+            if smin > 2.536 / fs and state:
                 second = True
             else:
                 second = False
@@ -76,39 +76,11 @@ def read_annotations(
     resampled = signal.resample_poly(heights, 250, 360)
     heights = filters.Low_pass(resampled)
 
-    heights = filters.iir(heights, 2000)
-    k = round(250/60)
-    fir = []
-    for i in range(k):
-        fir.append(0)
-    # fir = [0, 0, 0, 0, 0, 0]
-    for i in range(k, len(heights)):
-        fir.append(heights[i] - heights[i - k])
-    sig = [fir[i] ** 2 for i in range(len(fir))]
-    window = int(0.15 * 250)
-    denoised = []
-    for i in range(window):
-        denoised.append(0)
-    for i in range(window, len(sig)):
-        new = 0
-        for m in range(window):
-            new += sig[i - m]
-        denoised.append(new / window)
-    t = [i for i in range(len(sig))]
-    plt.plot(t, sig)
-    t = [i for i in range(len(denoised))]
-    plt.plot(t, denoised)
-    # normalized = []
-    # ymin = min(denoised)
-    # ymax = max(denoised)
-    # for i in range(len(denoised)):
-    #     normalized.append((denoised[i] - ymin) / (ymax - ymin))
-    # t = [i for i in range(len(normalized))]
-    # plt.plot(t, normalized)
+    # heights = filters.iir(heights, 2000)
     # baseObj = BaselineRemoval(heights)
     # Zhangfit_output = baseObj.ZhangFit()
     fs = 250
-    return heights, sig, denoised, fs
+    return heights, fs
 
 
 def max_min_slopes(
@@ -176,11 +148,11 @@ def teeta_diff(
     s_avg = np.average(np.absolute(li[-8:]))
 
     if s_avg > 20.480 / fs:
-        return 7.680 / fs
+        return 9.680 / fs
     elif 2.800 / fs < s_avg < 20.480 / fs:
-        return 4.352 / fs
+        return 6.352 / fs
     else:
-        return 3.840 / fs
+        return 5.840 / fs
 
 
 def first_criterion(
@@ -228,7 +200,7 @@ def second_criterion(
     :param fs: sampling frequency
     :return: True -> sample validates second criterion, False -> otherwise
     """
-    if smin > 1.536 / fs and state:
+    if smin > 2.536 / fs and state:
         return True
     else:
         return False
@@ -245,11 +217,10 @@ def second_criterion_re(
     :param fs: sampling frequency
     :return: True -> sample validates second criterion, False -> otherwise
     """
-    if smin > 8.536 / fs and state:
+    if smin > 8.36 / fs and state:
         return True
     else:
         return False
-
 
 
 def third_criterion(
@@ -291,11 +262,7 @@ def locate_r_peaks(
         lo: list,
         pe: list,
         sl: list,
-        sd: list,
-        squared: list,
-        denoised: list,
-        sq: float,
-        de: float) -> tuple:
+        sd: list) -> tuple:
 
     """
 
@@ -313,8 +280,6 @@ def locate_r_peaks(
     global slope_heights
     global sdiffs
 
-    sq_thresh = sq
-    de_thresh = de
     peaks = pe.copy()
     locations = lo.copy()
     slope_heights = sl.copy()
@@ -396,33 +361,32 @@ def locate_r_peaks(
                 element = max(np.absolute(heights[m - a:m + a + 1]))
                 loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
                 loc = loc[0][0] + m - a
-                l.append(loc)
-                p.append(heights[loc])
-                if squared[loc] > sq_thresh and denoised[loc] > de_thresh:
-                    if loc - c > locations[-1] :
-                        locations.append(loc)
-                        peaks.append(heights[loc])
-                        slope_heights.append(max_height)
-                        sdiffs.append(sdiff_max)
+                # l.append(loc)
+                # p.append(heights[loc])
+                if loc - c > locations[-1]:
+                    locations.append(loc)
+                    peaks.append(heights[loc])
+                    slope_heights.append(max_height)
+                    sdiffs.append(sdiff_max)
+                    m = loc
+
+
+                else:
+                    s = []
+                    for n in range(m - a, m + a + 1):
+                        maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
+                            n, heights, fs)
+                        sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
+                                                                      maximum_l_height,
+                                                                      maximum_r_height)
+                        s.append(sdiff_temp)
+
+                    if sdiff_max > sdiffs[-1]:
+                        peaks[-1] = heights[loc]
+                        locations[-1] = loc
+                        slope_heights[-1] = max_height
+                        sdiffs[-1] = sdiff_max
                         m = loc
-
-
-                    else:
-                        s = []
-                        for n in range(m - a, m + a + 1):
-                            maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
-                                n, heights, fs)
-                            sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
-                                                                          maximum_l_height,
-                                                                          maximum_r_height)
-                            s.append(sdiff_temp)
-
-                        if sdiff_max > sdiffs[-1]:
-                            peaks[-1] = heights[loc]
-                            locations[-1] = loc
-                            slope_heights[-1] = max_height
-                            sdiffs[-1] = sdiff_max
-                            m = loc
 
             m += 1
 
@@ -432,20 +396,9 @@ def locate_r_peaks(
     if callibrate == False:
         count = count-1
 
-    # plt.scatter(l, p, color="blue", marker="o")
-    locations = locations[count:]
-    peaks = peaks[count:]
-    sdiffs = sdiffs[count:]
-    slope_heights = slope_heights[count:]
+    # plt.scatter(l, p, color="red", marker="o")
 
-
-
-    if callibrate == False:
-        sq_thresh = np.average([squared[k] for k in locations])
-        de_thresh = np.average([denoised[k] for k in locations])
-
-
-    return locations, peaks, count, sdiffs, slope_heights, sq_thresh, de_thresh
+    return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
 
 
 def new_r_peaks(
@@ -456,11 +409,7 @@ def new_r_peaks(
         end_loc: int,
         begin_peak: int,
         sd: list,
-        sl: list,
-        squared: list,
-        denoised: list,
-        sq: float,
-        de: float) -> tuple:
+        sl: list) -> tuple:
 
     """
 
@@ -477,8 +426,6 @@ def new_r_peaks(
 
     global slope_heights
     global sdiffs
-    sq_thresh = sq
-    de_thresh = de
 
     peaks = [begin_peak]
     locations = [begin_loc]
@@ -499,55 +446,51 @@ def new_r_peaks(
                                                          maximum_r_height)
             teeta = teeta_diff(sdiffs, fs)
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion(
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion_re(
                 max_height, slope_heights)
-            # if first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion_re(
-            #     max_height, slope_heights):
-            #     element = max(np.absolute(heights[i - a:i + a + 1]))
-            #     loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
-            #     loc = loc[0][0] + i - a
-
-
-            if qrs_complex:
-                l.append(i+begin_loc)
-                p.append(heights[i])
-
+            if first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion_re(
+                max_height, slope_heights):
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
+                l.append(loc + begin_loc)
+                p.append(heights[loc])
 
-                if squared[loc] > sq_thresh and denoised[loc] > de_thresh:
-                    if loc+begin_loc + c < end_loc:
-                        if loc+begin_loc - c > locations[-1]:
-                            locations.append(loc+begin_loc)
-                            peaks.append(heights[loc])
-                            slope_heights.append(max_height)
-                            sdiffs.append(sdiff_max)
+            if qrs_complex:
+                # l.append(i+begin_loc)
+                # p.append(heights[i])
+                element = max(np.absolute(heights[i - a:i + a + 1]))
+                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
+                loc = loc[0][0] + i - a
+                if loc+begin_loc + c < end_loc:
+                    if loc+begin_loc - c > locations[-1]:
+                        locations.append(loc+begin_loc)
+                        peaks.append(heights[loc])
+                        slope_heights.append(max_height)
+                        sdiffs.append(sdiff_max)
 
-                        else:
-                            s = []
-                            for n in range(i-a, i+a+1):
-                                maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
-                                    n, heights, fs)
-                                sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
-                                                                             maximum_l_height,
-                                                                             maximum_r_height)
-                                s.append(sdiff_temp)
+                    else:
+                        s = []
+                        for n in range(i-a, i+a+1):
+                            maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
+                                n, heights, fs)
+                            sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
+                                                                         maximum_l_height,
+                                                                         maximum_r_height)
+                            s.append(sdiff_temp)
 
-                            if sdiff_max > sdiffs[-1]:
-                                peaks[-1] = heights[loc]
-                                locations[-1] = loc+begin_loc
-                                slope_heights[-1] = max_height
-                                sdiffs[-1] = sdiff_max
-                else:
-                    pass
+                        if sdiff_max > sdiffs[-1]:
+                            peaks[-1] = heights[loc]
+                            locations[-1] = loc+begin_loc
+                            slope_heights[-1] = max_height
+                            sdiffs[-1] = sdiff_max
 
 
         except ValueError:
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-    plt.scatter(l, p, color="red")
+    # plt.scatter(l, p, color="red")
 
     return locations, peaks
 

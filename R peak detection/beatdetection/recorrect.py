@@ -17,11 +17,7 @@ def check_peak(
         end: int,
         peak: int,
         sd: list,
-        sl: list,
-        squared: list,
-        denoised: list,
-        sq: float,
-        de: float) -> tuple:
+        sl: list) -> tuple:
 
     """
 
@@ -35,9 +31,8 @@ def check_peak(
     :param sl: slope heights upto begin loc
     :return: tuple
     """
-    locations, peaks = rpeakdetection.new_r_peaks(sub_list, fs, c, loc, end, peak, sd, sl, squared, denoised, sq, de)
+    locations, peaks = rpeakdetection.new_r_peaks(sub_list, fs, c, loc, end, peak, sd, sl)
     # print(locations)
     return locations, peaks
-
 
 

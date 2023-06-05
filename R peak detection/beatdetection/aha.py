@@ -24,6 +24,7 @@ from openpyxl import Workbook
 from beatdetection import recorrect
 from beatdetection import filters
 import time
+import scipy
 from scipy import signal
 
 excel = int(input("Write accuracy values to a XL sheet? "))
@@ -148,7 +149,7 @@ def calibration(heights, fs):
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[locations[i]:locations[i + 1]], fs,
+            add_locs, add_peaks = recorrect.check_peak(round(0.2 * fs), heights[locations[i]:locations[i + 1]], fs,
                                                        locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
                                                        slope_heights[:i+1])
 
@@ -182,6 +183,16 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
         ecg = filters.Low_pass(ecg)
         ecg = filters.iir(ecg, 2000)
+
+        QRS_removed = scipy.signal.medfilt(ecg, kernel_size=round(0.2 * AHA_sampled_freq) + 1)
+        T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
+        Baseline_removed = ecg - T_removed
+
+        t = [i for i in range(len(Baseline_removed))]
+        plt.plot(t, Baseline_removed)
+
+        remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * AHA_sampled_freq))
+        ecg = Baseline_removed - remove_qrs
 
         t = [i for i in range(len(ecg))]
         plt.plot(t, ecg)
@@ -226,7 +237,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 pre_peaks = pea[:i + 1]
                 post_peaks = pea[i + 1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.28 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
+                add_locs, add_peaks = recorrect.check_peak(round(0.2 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
                                                            loc[i], loc[i + 1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
@@ -253,7 +264,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 del pea[o]
         # mask = artifact_masking_noise.identify_noise(ecg, ecg1, loc, AHA_sampled_freq)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                False, False)
+                                                                True, True)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -267,7 +278,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = list(AHA_records)
-    # check_file_list = ["3204", "8203", "8206", "8209"]
+    # check_file_list = list(AHA_records)
+    check_file_list = ["1209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
