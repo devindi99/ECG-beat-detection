@@ -81,8 +81,8 @@ for record in range(232, 235):
         T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * fs) + 1)
         Baseline_removed = heights - T_removed
 
-        remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * fs))
-        heights = Baseline_removed
+        remove_t = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * fs))
+        heights = Baseline_removed-remove_t
 
         t = [i for i in range(len(Baseline_removed))]
         plt.plot(t, Baseline_removed)
