@@ -1,20 +1,12 @@
 from beatdetection import rpeakdetection
-from beatdetection import ptemplate
 import numpy as np
-import scipy
-import matplotlib
-from beatdetection import folderhandling
 from beatdetection import beatpair
 from beatdetection import recorrect
-# matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from dtaidistance import dtw
 from openpyxl import Workbook
 import time
+import scipy
 
-folder = "Attempt3/"
-folderhandling.mkdir_p(folder)
-# check_accuracy = int(input("Accuracy checker ON/ OFF? "))
+
 excel = int(input("Write accuracy values to a XL sheet? "))
 if excel:
     wb = Workbook()
@@ -24,21 +16,24 @@ if excel:
     ws1.title = sheet
 
 
-def calibration(heights, fs):
-    l = []
-    p = []
+def calibration(
+        heights: list,
+        fs: int) -> tuple:
 
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), False, [], [], [], [])
+    """
+
+    :param heights: ECG signal values up to the first five minutes
+    :param fs: sampling frequency
+    :return: tuple(R peak locations: list, R peak heights: list, average RR interval: float, slope heights: list,
+    slope differences: list)
+    """
+    locations, peaks, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
     while i < k - 1:
         state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * fs))
         if state:
-            l.append(locations[i])
-            l.append(locations[i + 1])
-            p.append(peaks[i])
-            p.append(peaks[i + 1])
             pre_loc = locations[:i + 1]
             post_loc = locations[i + 1:]
             pre_peaks = peaks[:i + 1]
@@ -57,15 +52,13 @@ def calibration(heights, fs):
         i += 1
 
     RR = []
-    plt.scatter(l, p, color="green", marker="o")
     for m in range(len(locations)-1):
         RR.append(locations[m+1] - locations[m])
     avg_RR = np.average(RR)
-    # plt.scatter(l, p, color="green")
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(232, 235):
+for record in range(100, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -73,30 +66,19 @@ for record in range(232, 235):
             continue
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         heights, fs = rpeakdetection.read_annotations(record, path)
-        t = [i for i in range(len(heights))]
-        plt.plot(t, heights)
-        print(record)
 
         QRS_removed = scipy.signal.medfilt(heights, kernel_size=round(0.2 * fs) + 1)
         T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * fs) + 1)
-        Baseline_removed = heights - T_removed
+        heights = heights - T_removed
 
-        remove_t = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * fs))
-        heights = Baseline_removed-remove_t
-
-        t = [i for i in range(len(Baseline_removed))]
-        plt.plot(t, Baseline_removed)
-
-        l = []
-        p = []
+        print(record)
 
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(heights[:5*60*fs+1], fs)
         print(d/fs)
-        # plt.scatter(cal_locations, cal_peaks, color="blue")
         i = 0
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), True, cal_locations, cal_peaks, slope_heights, sdiffs)
-        # plt.scatter(loc, pea, color="blue")
+        loc, pea, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), True,
+                                                                               cal_locations, cal_peaks, slope_heights, sdiffs)
 
         k = len(loc)
 
@@ -104,11 +86,6 @@ for record in range(232, 235):
 
             state = recorrect.check_rr(loc[i], loc[i+1], d)
             if state:
-                l.append(loc[i])
-                l.append(loc[i+1])
-                p.append(pea[i])
-                p.append(pea[i+1])
-
                 pre_loc = loc[:i+1]
                 post_loc = loc[i+1:]
                 pre_peaks = pea[:i+1]
@@ -118,14 +95,12 @@ for record in range(232, 235):
                                                            loc[i], loc[i+1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
-                # plt.scatter(add_locs, add_peaks, color="black")
                 loc = pre_loc+add_locs+post_loc
                 pea = pre_peaks+add_peaks+post_peaks
                 k += n
                 i += n
             i += 1
 
-        # plt.scatter(l, p, color="green", marker="o")
         loc = cal_locations + loc
         pea = cal_peaks + pea
         end = time.time()
@@ -137,10 +112,8 @@ for record in range(232, 235):
                 loc.remove(a_fib[m])
                 del pea[o]
 
-        # plt.scatter(locations, peaks, color="red", marker="x")
-        # plt.show()
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
-                                                           True, True)
+                                                           False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)

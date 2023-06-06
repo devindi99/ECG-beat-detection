@@ -1,9 +1,20 @@
 from beatdetection import rpeakdetection
-import numpy as np
 
 
-def check_rr(sample1, sample2, d):
-    if (sample2 - sample1 > d):
+def check_rr(
+        sample1: int,
+        sample2: int,
+        rr_int: float) -> bool:
+
+    """
+
+    :param sample1: Location of previous R peak
+    :param sample2: Location of R peak
+    :param rr_int: Estimated RR interval
+    :return: True -> The detected RR interval is larger than the estimated. There is a possibility of a R peak existing
+    in between the two R peaks, False -> otherwise
+    """
+    if sample2 - sample1 > rr_int:
         return True
     else:
         return False
@@ -14,25 +25,25 @@ def check_peak(
         sub_list: list,
         fs: int,
         loc: int,
-        end: int,
+        last_loc: int,
         peak: int,
-        sd: list,
-        sl: list) -> tuple:
+        slope_diff: list,
+        slope_heights: list) -> tuple:
 
     """
 
     :param c: the window that is considered as no two R peaks will be present
     :param sub_list: window that R peaks were not detected
     :param fs: sampling frequency
-    :param loc: location of last R peak that was detected before the window where R peaks were absent
-    :param end: location of the final R peak inside the window where R peaks were absent
-    :param peak: height of the last peak before the window where R peaks were absent
-    :param sd: sdiffs upto begin loc
-    :param sl: slope heights upto begin loc
-    :return: tuple
+    :param loc: location of last R peak that was detected before the interval where no R peak was detected
+    :param last_loc: location of the final R peak after the interval where no R peak was detected
+    :param peak: height of the last peak before the interval where no R peak was detected
+    :param slope_diff: slope difference values up to loc
+    :param slope_heights: slope heights up to begin loc
+    :return: tuple containing the lists of location and peak values
     """
-    locations, peaks = rpeakdetection.new_r_peaks(sub_list, fs, c, loc, end, peak, sd, sl)
-    # print(locations)
+    locations, peaks = rpeakdetection.new_r_peaks(sub_list, fs, c, loc, last_loc, peak, slope_diff, slope_heights)
     return locations, peaks
+
 
 

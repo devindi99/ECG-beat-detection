@@ -1,11 +1,9 @@
 import wfdb
 import numpy as np
-import matplotlib.pyplot as plt
-import time
 from BaselineRemoval import BaselineRemoval
 from beatdetection import filters
 from scipy import signal
-from beatdetection import beatpair
+
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
 sdiffs = []
@@ -67,18 +65,19 @@ def read_annotations(
 
     :param name: name of the record as an integer
     :param path: folder path where the record exist
-    :return: sample heights and the sampling frequency
+    :return: low pass filtered ECG signal and the sampling frequency (250 Hz)
     """
 
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
     resampled = signal.resample_poly(heights, 250, 360)
+
+    # Resample the original ECG signal to 250 Hz, comment out when using AHA database
     heights = filters.Low_pass(resampled)
 
+    # A high pass filter for removing baseline wander, can use this instead of the two median filters
     # heights = filters.iir(heights, 2000)
-    # baseObj = BaselineRemoval(heights)
-    # Zhangfit_output = baseObj.ZhangFit()
     fs = 250
     return heights, fs
 
@@ -128,7 +127,7 @@ def max_slope_difference(
     :param minimum_l: minimum slope to the left side of the sample
     :param maximum_l_height: maximum slope height to the left of the sample
     :param maximum_r_height: maximum slope height to the right of the sample
-    :return: maximum slope difference, maximum slope height
+    :return: a tuple contatining maximum slope difference and maximum slope height
     """
     if maximum_l - minimum_r > maximum_r - minimum_l:
         return maximum_l - minimum_r, maximum_l_height
@@ -268,12 +267,12 @@ def locate_r_peaks(
 
     :param heights: sample heights
     :param fs: sampling frequency
-    :param c: window that is considered as no two R peaks exist
-    :param callibrate:
-    :param lo:
-    :param pe:
-    :param sl:
-    :param sd:
+    :param c: window that is considered as the detected R peaks belong to the same R peak
+    :param callibrate: True -> a callibration was done beforehand, False -> otherwise
+    :param lo: The R peak locations detected so far
+    :param pe: The R peak heights detected so far
+    :param sl: slope height values detected so far
+    :param sd: slope difference values detected so far
     :return:
     """
 
@@ -284,13 +283,8 @@ def locate_r_peaks(
     locations = lo.copy()
     slope_heights = sl.copy()
     sdiffs = sd.copy()
-    l = []
-    p = []
 
-
-    count = 0
     b = round(0.063 * fs)
-    # c = round(0.37 * fs)
     a = round(0.027 * fs)
 
     if callibrate:
@@ -301,16 +295,18 @@ def locate_r_peaks(
     if len(locations) == 0:
         for i in range(f, f+(3 * fs)):
             if initial(i, heights, fs):
-                # element = max(np.absolute(heights[i - b:i + b + 1]))
-                # loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
-                # loc = loc[0][0] + i - b
-                peaks.append(heights[i])
-                locations.append(i)
-                # count += 1
+                element = max(np.absolute(heights[i - b:i + b + 1]))
+                loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
+                loc = loc[0][0] + i - b
+
+                if loc not in locations:
+                    peaks.append(heights[loc])
+                    locations.append(loc)
+
     count = len(locations)
     m = f
-    # for m in range(f, len(heights) + 1 - b):
-    while m < len(heights) + 1 - b :
+
+    while m < len(heights) + 1 - b:
         try:
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(m, heights,
                                                                                                         fs)
@@ -321,48 +317,10 @@ def locate_r_peaks(
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion_re(
                 max_height, slope_heights)
 
-            if first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) :
-                element = max(np.absolute(heights[m - a:m + a + 1]))
-                loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
-                loc = loc[0][0] + m - a
-                l.append(loc)
-                p.append(heights[loc])
-            # if qrs_complex:
-            #     element = max(np.absolute(heights[m - a:m + a + 1]))
-            #     loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
-            #     loc = loc[0][0] + m - a
-            #     # l.append(loc)
-            #     # p.append(heights[loc])
-            #     if loc - c > locations[-1]:
-            #         locations.append(loc)
-            #         peaks.append(heights[loc])
-            #         slope_heights.append(max_height)
-            #         sdiffs.append(sdiff_max)
-            #         # m = loc
-            #
-            #
-            #     else:
-            #         s = []
-            #         for n in range(m - a, m + a + 1):
-            #             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
-            #                 n, heights, fs)
-            #             sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
-            #                                                           maximum_l_height,
-            #                                                           maximum_r_height)
-            #             s.append(sdiff_temp)
-            #
-            #         if sdiff_max > sdiffs[-1]:
-            #             peaks[-1] = heights[loc]
-            #             locations[-1] = loc
-            #             slope_heights[-1] = max_height
-            #             sdiffs[-1] = sdiff_max
-
             if qrs_complex:
                 element = max(np.absolute(heights[m - a:m + a + 1]))
                 loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
                 loc = loc[0][0] + m - a
-                # l.append(loc)
-                # p.append(heights[loc])
                 if loc - c > locations[-1]:
                     locations.append(loc)
                     peaks.append(heights[loc])
@@ -372,15 +330,6 @@ def locate_r_peaks(
 
 
                 else:
-                    s = []
-                    for n in range(m - a, m + a + 1):
-                        maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
-                            n, heights, fs)
-                        sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
-                                                                      maximum_l_height,
-                                                                      maximum_r_height)
-                        s.append(sdiff_temp)
-
                     if sdiff_max > sdiffs[-1]:
                         peaks[-1] = heights[loc]
                         locations[-1] = loc
@@ -390,13 +339,11 @@ def locate_r_peaks(
 
             m += 1
 
-
         except ValueError:
             continue
-    if callibrate == False:
-        count = count-1
 
-    # plt.scatter(l, p, color="red", marker="o")
+    if not callibrate:
+        count = count-1
 
     return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
 
@@ -416,11 +363,11 @@ def new_r_peaks(
     :param heights: list of heights
     :param fs: sampling frequency
     :param c: the window that is considered as no two R peaks will be present
-    :param begin_loc: location of last R peak that was detected before the window where R peaks were absent
-    :param end_loc: location of the final R peak inside the window where R peaks were absent
-    :param begin_peak: height of the last peak before the window where R peaks were absent
-    :param sd: sdiffs upto begin loc
-    :param sl: slope heights upto begin loc
+    :param begin_loc: location of last R peak that was detected before the interval where no R peak was detected
+    :param end_loc: location of the final R peak after the interval where no R peak was detected
+    :param begin_peak: height of the last peak before the interval where no R peak was detected
+    :param sd: slope difference values up to begin_loc
+    :param sl: slope heights upt to begin_loc
     :return: newly detected R peaks
     """
 
@@ -429,15 +376,13 @@ def new_r_peaks(
 
     peaks = [begin_peak]
     locations = [begin_loc]
-    l = []
-    p = []
     slope_heights = sl
     sdiffs = sd
     b = round(0.063 * fs)
     a = round(0.027 * fs)
 
     for i in range(b, len(heights) + 1 - b):
-        # while i < len(heights) + 1 - b :
+
         try:
 
             maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(i, heights,
@@ -448,17 +393,8 @@ def new_r_peaks(
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
             qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion_re(
                 max_height, slope_heights)
-            if first_criterion(teeta, sdiff_max) and second_criterion(smin, state, fs) and third_criterion_re(
-                max_height, slope_heights):
-                element = max(np.absolute(heights[i - a:i + a + 1]))
-                loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
-                loc = loc[0][0] + i - a
-                l.append(loc + begin_loc)
-                p.append(heights[loc])
 
             if qrs_complex:
-                # l.append(i+begin_loc)
-                # p.append(heights[i])
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
@@ -470,27 +406,16 @@ def new_r_peaks(
                         sdiffs.append(sdiff_max)
 
                     else:
-                        s = []
-                        for n in range(i-a, i+a+1):
-                            maximum_r, minimum_r, maximum_l, minimum_l, maximum_r_height, maximum_l_height = max_min_slopes(
-                                n, heights, fs)
-                            sdiff_temp, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l,
-                                                                         maximum_l_height,
-                                                                         maximum_r_height)
-                            s.append(sdiff_temp)
-
                         if sdiff_max > sdiffs[-1]:
                             peaks[-1] = heights[loc]
                             locations[-1] = loc+begin_loc
                             slope_heights[-1] = max_height
                             sdiffs[-1] = sdiff_max
 
-
         except ValueError:
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-    # plt.scatter(l, p, color="red")
 
     return locations, peaks
 
