@@ -216,7 +216,7 @@ def second_criterion_re(
     :param fs: sampling frequency
     :return: True -> sample validates second criterion, False -> otherwise
     """
-    if smin > 8.36 / fs and state:
+    if smin > 10.36 / fs and state:
         return True
     else:
         return False
