@@ -130,8 +130,8 @@ def plot_peaks(signal: npt.NDArray, annotation: npt.NDArray, record: str) -> tup
 
 
 def calibration(heights, fs):
-    l = []
-    p = []
+    # l = []
+    # p = []
 
     locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
     k = len(locations)
@@ -140,10 +140,10 @@ def calibration(heights, fs):
     while i < k - 1:
         state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * fs))
         if state:
-            l.append(locations[i])
-            l.append(locations[i + 1])
-            p.append(peaks[i])
-            p.append(peaks[i + 1])
+            # l.append(locations[i])
+            # l.append(locations[i + 1])
+            # p.append(peaks[i])
+            # p.append(peaks[i + 1])
             pre_loc = locations[:i + 1]
             post_loc = locations[i + 1:]
             pre_peaks = peaks[:i + 1]
@@ -175,10 +175,10 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         file_list = AHA_records
     for j in range(len(file_list)):
         ecg, ann = read_aharecord_reference(file_dir, file_list[j])
-        # t = [i for i in range(len(ecg))]
-        # plt.plot(t, ecg)
+        t = [i for i in range(len(ecg))]
+        plt.plot(t, ecg)
         plt.title(f'AHA record {file_list[j]}: ECG signal with peaks')
-        # plt.show()
+
 
 
         ecg = filters.Low_pass(ecg)
@@ -188,8 +188,8 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
         Baseline_removed = ecg - T_removed
 
-        # t = [i for i in range(len(Baseline_removed))]
-        # plt.plot(t, Baseline_removed)
+        t = [i for i in range(len(Baseline_removed))]
+        plt.plot(t, Baseline_removed)
 
         # remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * AHA_sampled_freq))
         ecg = Baseline_removed
@@ -201,19 +201,18 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 try:
                     for m in range(ann[i][0],ann[i+1][0]):
                         vfib.append(m)
-                    # d = [m for m in range(ann[i][0],ann[i+1][0])]
+
                 except IndexError:
                     for m in range(ann[i][0], len(ecg)):
                         vfib.append(m)
-                # ecg = np.delete(ecg, d)
-        # ecg = ecg[:ref_locations[-1]+40]
+
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
         # plt.scatter(loc, pea, color="red")
-        # locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, 250, round(0.375 * AHA_sampled_freq))
+
         print(file_list[j])
 
         k = len(loc)
@@ -245,24 +244,16 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 k += n
                 i += n
             i += 1
-        # loc = cal_locations + loc
-        # pea = cal_peaks + pea
         # plt.scatter(l, p, color="blue")
         end = time.time()
-        # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
-        # filename = file_list[j] + ".mat"
-        # savemat(filename, {'testann': np.array(locations), "refann": np.array(ref_locations)})
-        # data = loadmat(filename)
-        # print(data["testann"])
-        # print(data["refann"])
         for m in range(len(vfib)):
             if vfib[m] in loc:
                 o = loc.index(vfib[m])
                 loc.remove(vfib[m])
                 del pea[o]
-        # mask = artifact_masking_noise.identify_noise(ecg, ecg1, loc, AHA_sampled_freq)
+
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                False, False)
+                                                                True, True)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -276,7 +267,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = list(AHA_records)
-    # check_file_list = ["1209"]
+    # check_file_list = list(AHA_records)
+    check_file_list = ["5201", "7209", "8207", "8209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
