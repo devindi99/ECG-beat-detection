@@ -1,8 +1,17 @@
+"""
+This module is used to detect R peak locations of an 250 Hz resampled ECG signal. The functions are based on the three
+criterions of the Dual slope algorithm. Criterions with adjusted thresholds values are also defined when rechecking a
+signal section which has a possibility of having an R peak.
+"""
+
 import wfdb
 import numpy as np
 from BaselineRemoval import BaselineRemoval
+from typing import Tuple, List
+
 from beatdetection import filters
 from scipy import signal
+import matplotlib.pyplot as plt
 
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
@@ -14,6 +23,9 @@ def initial(
         samples: list,
         fs: int) -> bool:
     """
+    This function is used when detecting the R peaks of the first 3 seconds of an ECG signal. Later the detected beats
+    are discarded when calling the locate_R_peaks function.
+
     :param n: index of the current sample
     :param samples: sample heights
     :param fs: sampling frequency
@@ -60,8 +72,10 @@ def initial(
 
 def read_annotations(
         name: int,
-        path: str) -> tuple:
+        path: str) -> Tuple[List[float], int]:
     """
+    ECG signal is extracted from the data base using WFDB tool box and passed through a low pass filter and two cascaded
+    median filters to remove high frequency noise and baseline wander.
 
     :param name: name of the record as an integer
     :param path: folder path where the record exist
@@ -76,6 +90,11 @@ def read_annotations(
     # Resample the original ECG signal to 250 Hz, comment out when using AHA database
     heights = filters.Low_pass(resampled)
 
+    # baseline removal using two cascaded median filters
+    QRS_removed = signal.medfilt(heights, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
+    T_removed = signal.medfilt(QRS_removed, kernel_size=round(0.6 * 250) + 1)  # Remove T waves
+    heights = heights - T_removed
+
     # A high pass filter for removing baseline wander, can use this instead of the two median filters
     # heights = filters.iir(heights, 2000)
     fs = 250
@@ -85,8 +104,10 @@ def read_annotations(
 def max_min_slopes(
         n: int,
         samples: list,
-        fs: int) -> tuple:
+        fs: int) -> Tuple[float, float, float, float, float, float]:
     """
+    Calculate slopes from either side of the selected sample and return the maximum, minimum slopes and the
+    slope heights.
 
     :param n: index of the current sample
     :param samples: sample heights
@@ -118,8 +139,9 @@ def max_slope_difference(
         maximum_l: float,
         minimum_l: float,
         maximum_l_height: float,
-        maximum_r_height: float) -> tuple:
+        maximum_r_height: float) -> Tuple[float, float]:
     """
+    Return the maximum slope difference depending on the positivity/ negativity of the peak.
 
     :param maximum_r: maximum slope to the right side of the sample
     :param minimum_r: minimum slope to the right side of the sample
@@ -139,6 +161,7 @@ def teeta_diff(
         li: list,
         fs: int) -> float:
     """
+    Returns the threshold value to validate the first criterion.
 
     :param li: list of maximum slope differences
     :param fs: sampling frequency
@@ -169,8 +192,9 @@ def first_criterion(
 def s_min(maximum_r: float,
           minimum_r: float,
           maximum_l: float,
-          minimum_l: float) -> tuple:
+          minimum_l: float) -> Tuple[float, bool]:
     """
+    Calculate the minimum slope and returns true if the sample is a possible R peak.
 
     :param maximum_r: maximum slope to the right side of the sample
     :param minimum_r: minimum slope to the right side of the sample
@@ -205,6 +229,9 @@ def second_criterion(
         return False
 
 
+# function to use when rechecking the RR intervals.
+
+
 def second_criterion_re(
         smin: float,
         state: bool,
@@ -237,6 +264,8 @@ def third_criterion(
         h_avg = np.average(np.absolute(li[:]))
     return np.abs(cur_height) > h_avg * 0.4
 
+# function to use when rechecking the RR intervals.
+
 
 def third_criterion_re(
         cur_height: float,
@@ -257,23 +286,27 @@ def locate_r_peaks(
         heights: list,
         fs: int,
         c: int,
-        callibrate: bool,
+        calibrate: bool,
         lo: list,
         pe: list,
         sl: list,
-        sd: list) -> tuple:
+        sd: list) -> Tuple[List[int], List[float], int, List[float], List[float]]:
 
     """
+    For samples in the ECG recording R peaks are detected using the dual slope algorithm. Once an R peak is detected the
+    next R peak is detected after c number of samples.
 
     :param heights: sample heights
     :param fs: sampling frequency
-    :param c: window that is considered as the detected R peaks belong to the same R peak
-    :param callibrate: True -> a callibration was done beforehand, False -> otherwise
+    :param c: window that is considered as the detected R peaks belong to the same QRS complex
+    :param calibrate: True -> a calibration was done beforehand. starting point of R peak detection is 5*60*fs samples,
+            False -> otherwise
     :param lo: The R peak locations detected so far
     :param pe: The R peak heights detected so far
     :param sl: slope height values detected so far
     :param sd: slope difference values detected so far
-    :return:
+    :return: tuple(R peak locations: list, R peak heights: list, initially detected number of R peaks: int,
+            slope differences: list, slope heights: list)
     """
 
     global slope_heights
@@ -287,7 +320,7 @@ def locate_r_peaks(
     b = round(0.063 * fs)
     a = round(0.027 * fs)
 
-    if callibrate:
+    if calibrate:
         f = round(5*60*fs)+1
     else:
         f = b
@@ -318,6 +351,7 @@ def locate_r_peaks(
                 max_height, slope_heights)
 
             if qrs_complex:
+                # searching for the local maximum in the detected QRS complex
                 element = max(np.absolute(heights[m - a:m + a + 1]))
                 loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
                 loc = loc[0][0] + m - a
@@ -342,7 +376,7 @@ def locate_r_peaks(
         except ValueError:
             continue
 
-    if not callibrate:
+    if not calibrate:
         count = count-1
 
     return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
@@ -356,9 +390,11 @@ def new_r_peaks(
         end_loc: int,
         begin_peak: int,
         sd: list,
-        sl: list) -> tuple:
+        sl: list) -> Tuple[List[int], List[float]]:
 
     """
+    This function is used for detecting R peaks in certain signal sections. Each sample in the signal section is checked
+    for an R peak.
 
     :param heights: list of heights
     :param fs: sampling frequency
@@ -376,6 +412,8 @@ def new_r_peaks(
 
     peaks = [begin_peak]
     locations = [begin_loc]
+    l = []
+    p = []
     slope_heights = sl
     sdiffs = sd
     b = round(0.063 * fs)
@@ -391,13 +429,15 @@ def new_r_peaks(
                                                          maximum_r_height)
             teeta = teeta_diff(sdiffs, fs)
             smin, state = s_min(maximum_r, minimum_r, maximum_l, minimum_l)
-            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and third_criterion_re(
-                max_height, slope_heights)
+            qrs_complex = first_criterion(teeta, sdiff_max) and second_criterion_re(smin, state, fs) and \
+                          third_criterion_re(max_height, slope_heights)
 
             if qrs_complex:
                 element = max(np.absolute(heights[i - a:i + a + 1]))
                 loc = np.where(np.absolute(heights[i - a:i + a + 1]) == element)
                 loc = loc[0][0] + i - a
+                # l.append(loc+begin_loc)
+                # p.append(heights[loc])
                 if loc+begin_loc + c < end_loc:
                     if loc+begin_loc - c > locations[-1]:
                         locations.append(loc+begin_loc)
@@ -416,7 +456,7 @@ def new_r_peaks(
             continue
     locations = locations[1:]
     peaks = peaks[1:]
-
+    # plt.scatter(l, p, color="blue")
     return locations, peaks
 
 

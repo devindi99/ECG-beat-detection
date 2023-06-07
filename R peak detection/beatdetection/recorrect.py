@@ -1,3 +1,7 @@
+"""
+Module for checking signal sections with no R peak detected
+"""
+
 from beatdetection import rpeakdetection
 
 
@@ -7,6 +11,7 @@ def check_rr(
         rr_int: float) -> bool:
 
     """
+    Check if a certain signal section has a possibility of containing an undetected R peak.
 
     :param sample1: Location of previous R peak
     :param sample2: Location of R peak
@@ -28,7 +33,7 @@ def check_peak(
         last_loc: int,
         peak: int,
         slope_diff: list,
-        slope_heights: list) -> tuple:
+        slope_heights: list) -> Tuple[list, list]:
 
     """
 

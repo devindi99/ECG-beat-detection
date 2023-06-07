@@ -70,7 +70,7 @@ def extract_p_waves(
             onset_point = qrs(ymv, locations[i + 1])
             onsets.append(onset_point)
             onset_height.append(heights[onset_point])
-            T = round(360 * 0.4)
+            T = round(250 * 0.4)
             pre_onset = qrs(ymv, locations[i])
             rr = locations[i + 1] - locations[i]
             second_half = heights[pre_onset+T:onset_point + 1]

@@ -1,5 +1,12 @@
+"""
+Module for reading from annotation file using WFDB tool box, and calculating the number of True Positives, False
+Positives and False negatives.
+"""
+
 import wfdb
 import numpy as np
+from typing import Tuple, List
+
 from beatdetection import rpeakdetection
 from beatdetection import plot
 from scipy import signal
@@ -11,6 +18,7 @@ def read_annotations(
         name: int,
         path: str) -> tuple:
     """
+    This function is used to read atr files.
 
     :param name: name of the record as an integer
     :param path: folder path where the record exist
@@ -121,10 +129,10 @@ def beat_pair(refannot, testannot, fs=360):
 
 def ref_annotate(
         record: int,
-        path: str,
-        count: int) -> tuple:
+        path: str) -> Tuple[np.ndarray, np.ndarray, List[int]]:
 
     """
+    Returns reference beat locations and heights, and afib annotations
 
     :param record: name of the record as an integer
     :param path: folder path where the record exist
@@ -169,9 +177,20 @@ def accuracy_check(
         locations: list,
         peaks: list,
         fig: bool,
-        show: bool) ->tuple:
+        show: bool) -> Tuple[int, int, int, float, float, float]:
+    """
+    Calculate the number of True Positives, False negatives, False positives, sensitivity, positive predictivity and
+    error rate
 
-
+    :param ref_locations: Reference peak locations
+    :param ref_annotations: Reference peak heights
+    :param locations: Detected peak locations
+    :param peaks: Detected peak heights
+    :param fig: True -> ECG signals are plotted, False -> otherwise
+    :param show: Display signal and annotations as per required by the user
+    :return: number of True Positives, False negatives, False positives, sensitivity, positive predictivity and
+    error rate
+    """
     TP = 0
     FP = 0
     FN = 0

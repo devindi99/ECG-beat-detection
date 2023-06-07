@@ -3,6 +3,7 @@ import numpy as np
 from beatdetection import beatpair
 from beatdetection import recorrect
 from openpyxl import Workbook
+import matplotlib.pyplot as plt
 import time
 import scipy
 
@@ -67,10 +68,10 @@ for record in range(100, 235):
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         heights, fs = rpeakdetection.read_annotations(record, path)
 
-        QRS_removed = scipy.signal.medfilt(heights, kernel_size=round(0.2 * fs) + 1)
-        T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * fs) + 1)
-        heights = heights - T_removed
 
+
+        t = [i for i in range(len(heights))]
+        plt.plot(t, heights)
         print(record)
 
         start = time.time()
@@ -83,14 +84,19 @@ for record in range(100, 235):
         k = len(loc)
 
         while i < k-1:
-
-            state = recorrect.check_rr(loc[i], loc[i+1], d)
+            l = []
+            p = []
+            state = recorrect.check_rr(loc[i], loc[i+1], round(0.7 * fs))
             if state:
                 pre_loc = loc[:i+1]
                 post_loc = loc[i+1:]
                 pre_peaks = pea[:i+1]
                 post_peaks = pea[i+1:]
 
+                for m in range(loc[i], loc[i+1]+1):
+                    l.append(m)
+                    p.append(heights[m])
+                plt.plot(l, p, color="red")
                 add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[loc[i]:loc[i+1]], fs,
                                                            loc[i], loc[i+1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
@@ -113,7 +119,7 @@ for record in range(100, 235):
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
-                                                           False, False)
+                                                          False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
