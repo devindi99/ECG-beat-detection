@@ -1,6 +1,7 @@
 """
 Module for checking signal sections with no R peak detected
 """
+from typing import Tuple
 
 from beatdetection import rpeakdetection
 

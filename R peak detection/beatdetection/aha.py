@@ -149,9 +149,9 @@ def calibration(heights, fs):
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.2 * fs), heights[locations[i]:locations[i + 1]], fs,
-                                                       locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
-                                                       slope_heights[:i+1])
+            add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[locations[i]:locations[i + 1]], fs,
+                                                       locations[i], locations[i + 1], peaks[i], sdiffs[:i],
+                                                       slope_heights[:i])
 
             n = len(add_locs)
 
@@ -182,20 +182,18 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
         ecg = filters.Low_pass(ecg)
-        ecg = filters.iir(ecg, 2000)
+        # ecg = filters.iir(ecg, 2000)
 
         QRS_removed = scipy.signal.medfilt(ecg, kernel_size=round(0.2 * AHA_sampled_freq) + 1)
         T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
         Baseline_removed = ecg - T_removed
 
-        t = [i for i in range(len(Baseline_removed))]
-        plt.plot(t, Baseline_removed)
+        # t = [i for i in range(len(Baseline_removed))]
+        # plt.plot(t, Baseline_removed)
 
-        remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * AHA_sampled_freq))
-        ecg = Baseline_removed - remove_qrs
+        # remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * AHA_sampled_freq))
+        ecg = Baseline_removed
 
-        t = [i for i in range(len(ecg))]
-        plt.plot(t, ecg)
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
         vfib=[]
         for i in range(len(ann)):
@@ -220,24 +218,24 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
         k = len(loc)
         i = 0
-        l = []
-        p = []
+        # l = []
+        # p = []
         # plt.scatter(loc, pea, color="red", marker="o")
 
         while i < k - 1:
             state = recorrect.check_rr(loc[i], loc[i + 1], d)
             if state:
-                l.append(loc[i])
-                l.append(loc[i + 1])
-                p.append(pea[i])
-                p.append(pea[i + 1])
+                # l.append(loc[i])
+                # l.append(loc[i + 1])
+                # p.append(pea[i])
+                # p.append(pea[i + 1])
 
                 pre_loc = loc[:i + 1]
                 post_loc = loc[i + 1:]
                 pre_peaks = pea[:i + 1]
                 post_peaks = pea[i + 1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.2 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
+                add_locs, add_peaks = recorrect.check_peak(round(0.28 * AHA_sampled_freq), ecg[loc[i]:loc[i + 1]],AHA_sampled_freq,
                                                            loc[i], loc[i + 1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
@@ -249,7 +247,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
             i += 1
         # loc = cal_locations + loc
         # pea = cal_peaks + pea
-        plt.scatter(l, p, color="blue")
+        # plt.scatter(l, p, color="blue")
         end = time.time()
         # mydata = np.array([(1, 1.0), (2, 2.0)], dtype=[('foo', 'i'), ('bar', 'f')])
         # filename = file_list[j] + ".mat"
@@ -264,7 +262,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 del pea[o]
         # mask = artifact_masking_noise.identify_noise(ecg, ecg1, loc, AHA_sampled_freq)
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                True, True)
+                                                                False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -278,7 +276,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    # check_file_list = list(AHA_records)
-    check_file_list = ["1209"]
+    check_file_list = list(AHA_records)
+    # check_file_list = ["1209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
