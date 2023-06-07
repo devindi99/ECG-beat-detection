@@ -59,7 +59,7 @@ def calibration(
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(113, 235):
+for record in range(100, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -86,7 +86,7 @@ for record in range(113, 235):
         while i < k-1:
             l = []
             p = []
-            state = recorrect.check_rr(loc[i], loc[i+1], round(0.7 * fs))
+            state = recorrect.check_rr(loc[i], loc[i+1], d)
             if state:
                 pre_loc = loc[:i+1]
                 post_loc = loc[i+1:]
@@ -119,7 +119,7 @@ for record in range(113, 235):
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
-                                                          True, True)
+                                                          False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
