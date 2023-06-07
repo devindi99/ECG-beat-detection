@@ -280,7 +280,7 @@ def third_criterion_re(
         h_avg = np.average(np.absolute(li[-8:]))
     except IndexError:
         h_avg = np.average(np.absolute(li[:]))
-    return np.abs(cur_height) > h_avg * 0.3
+    return np.abs(cur_height) > h_avg * 0.7
 
 def locate_r_peaks(
         heights: list,

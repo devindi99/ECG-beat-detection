@@ -59,7 +59,7 @@ def calibration(
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(100, 235):
+for record in range(113, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -111,7 +111,7 @@ for record in range(100, 235):
         pea = cal_peaks + pea
         end = time.time()
 
-        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, fs)
+        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path)
         for m in range(len(a_fib)):
             if a_fib[m] in loc:
                 o = loc.index(a_fib[m])
@@ -119,7 +119,7 @@ for record in range(100, 235):
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
-                                                          False, False)
+                                                          True, True)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)

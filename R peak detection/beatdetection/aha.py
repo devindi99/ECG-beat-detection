@@ -268,6 +268,6 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 if __name__ == '__main__':
     # check_file_list = list(AHA_records)
-    check_file_list = ["5201", "7209", "8207", "8209"]
+    check_file_list = ["7209", "8207", "8209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
