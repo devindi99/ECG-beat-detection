@@ -68,8 +68,6 @@ for record in range(100, 235):
         path = 'D:\\Semester 6\\Internship\\mit-bih-arrhythmia-database-1.0.0/'
         heights, fs = rpeakdetection.read_annotations(record, path)
 
-
-
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
         print(record)

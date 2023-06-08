@@ -188,8 +188,8 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
         Baseline_removed = ecg - T_removed
 
-        t = [i for i in range(len(Baseline_removed))]
-        plt.plot(t, Baseline_removed)
+        # t = [i for i in range(len(Baseline_removed))]
+        # plt.plot(t, Baseline_removed)
 
         # remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * AHA_sampled_freq))
         ecg = Baseline_removed
@@ -253,7 +253,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                True, True)
+                                                                False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -267,7 +267,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    # check_file_list = list(AHA_records)
-    check_file_list = ["7209", "8207", "8209"]
+    check_file_list = list(AHA_records)
+    # check_file_list = ["7209", "8207", "8209"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
