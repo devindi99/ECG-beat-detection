@@ -1,5 +1,15 @@
 import numpy as np
 
+from scipy.signal import butter,filtfilt
+
+
+def butter_lowpass_filter(data, cutoff, fs, order):
+    normal_cutoff = cutoff / (0.5 * fs)
+    # Get the filter coefficients
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    y = filtfilt(b, a, data)
+    return y
+
 
 def Low_pass(
         x: list) -> np.ndarray:
@@ -18,7 +28,7 @@ def Low_pass(
             y[i] = 2 * y[i - 1] + x[i] - y[i - 2] - 2 * x[i - 6]
         if i >= 12:
             y[i] = 2 * y[i - 1] + x[i] - y[i - 2] - 2 * x[i - 6] + x[i - 12]
-    return delay_com(y / 36, 4)
+    return delay_com(y /36, 4)
 
 
 def delay_com(
