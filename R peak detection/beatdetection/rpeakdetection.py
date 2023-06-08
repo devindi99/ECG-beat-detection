@@ -72,7 +72,7 @@ def initial(
 
 def read_annotations(
         name: int,
-        path: str) -> Tuple[List[float], int]:
+        path: str) -> Tuple[np.ndarray, int]:
     """
     ECG signal is extracted from the data base using WFDB tool box and passed through a low pass filter and two cascaded
     median filters to remove high frequency noise and baseline wander.
@@ -85,10 +85,16 @@ def read_annotations(
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
-    resampled = signal.resample_poly(heights, 250, 360)
 
     # Resample the original ECG signal to 250 Hz, comment out when using AHA database
-    heights = filters.Low_pass(resampled)
+    resampled = signal.resample_poly(heights, 250, 360)
+
+    # Filter requirements.
+    fs = 250  # sample rate, Hz
+    cutoff = 30  # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
+    order = 2  # sin wave can be approx represented as quadratic
+
+    heights = filters.butter_lowpass_filter(resampled, cutoff, fs, order)
 
     # baseline removal using two cascaded median filters
     QRS_removed = signal.medfilt(heights, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
@@ -277,7 +283,7 @@ def third_criterion_re(
         h_avg = np.average(np.absolute(li[-8:]))
     except IndexError:
         h_avg = np.average(np.absolute(li[:]))
-    return np.abs(cur_height) > h_avg * 0.3
+    return np.abs(cur_height) > h_avg * 0.4
 
 def locate_r_peaks(
         heights: list,

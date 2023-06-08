@@ -37,7 +37,7 @@ if excel:
 
 AHA_records = ("1201", "1202", "1203", "1204", "1205",
                "1206", "1207", "1208", "1209", "1210",
-               "2201", "2203", "2204", "2205",
+               "2201", "2203", "2205",
                "2206", "2207", "2208", "2209", "2210",
                "3201", "3202", "3203", "3204", "3205",
                "3206", "3207", "3208", "3209", "3210",
@@ -52,6 +52,7 @@ AHA_records = ("1201", "1202", "1203", "1204", "1205",
                "8201", "8202", "8203", "8204", "8206",
                "8207", "8208", "8209", "8210"
                )  # total 78 records, 2 records excluded due to paced beats
+# 2204 excluded due to missing beats
 AHA_sampled_freq = 250
 
 
@@ -134,10 +135,12 @@ def calibration(heights, fs):
     # p = []
 
     locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
+    print("find locations at first 5 mins first round")
     k = len(locations)
     i = 0
 
     while i < k - 1:
+        print(i)
         state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * fs))
         if state:
             # l.append(locations[i])
@@ -179,14 +182,21 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         plt.plot(t, ecg)
         plt.title(f'AHA record {file_list[j]}: ECG signal with peaks')
 
-
-
-        ecg = filters.Low_pass(ecg)
+        # Filter requirements.
+        fs = 250  # sample rate, Hz
+        cutoff = 30  # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
+        order = 2  # sin wave can be approx represented as quadratic
+        print("record extracted")
+        # print(len(ecg))
+        ecg = [ecg[i][0] for i in range(len(ecg))]
+        ecg = filters.butter_lowpass_filter(ecg, cutoff, fs, order)
+        print("low pass filtered")
         # ecg = filters.iir(ecg, 2000)
 
         QRS_removed = scipy.signal.medfilt(ecg, kernel_size=round(0.2 * AHA_sampled_freq) + 1)
         T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
         Baseline_removed = ecg - T_removed
+        print("baseline removed")
 
         # t = [i for i in range(len(Baseline_removed))]
         # plt.plot(t, Baseline_removed)
@@ -205,9 +215,10 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 except IndexError:
                     for m in range(ann[i][0], len(ecg)):
                         vfib.append(m)
-
+        print("vfib removed")
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
+        print("callibration done")
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
@@ -267,7 +278,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    check_file_list = list(AHA_records)
-    # check_file_list = ["7209", "8207", "8209"]
+    # check_file_list = list(AHA_records)
+    check_file_list = ["3202"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)

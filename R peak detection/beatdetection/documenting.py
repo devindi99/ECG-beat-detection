@@ -14,7 +14,7 @@ from beatdetection import filters
 # Filter requirements.
 T = 1/250         # Sample Period
 fs = 250       # sample rate, Hz
-cutoff = 20      # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
+cutoff = 30      # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
 nyq = 0.5 * fs  # Nyquist Frequency
 order = 2     # sin wave can be approx represented as quadratic
 n = int(T * fs) # total number of samples
@@ -42,7 +42,6 @@ def read_annotations(
     # plt.title("Original ECG signal")
 
     y = filters.butter_lowpass_filter(resampled, cutoff, fs, order)
-    y = [i+0.2 for i in y]
     t = [i for i in range(len(y))]
     plt.plot(t,y)
     # Resample the original ECG signal to 250 Hz, comment out when using AHA database
