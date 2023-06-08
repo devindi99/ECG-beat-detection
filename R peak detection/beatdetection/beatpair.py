@@ -168,12 +168,10 @@ def ref_annotate(
     except FileNotFoundError:
         print("File: ", record, "doesn't exist.")
 
-        return [], [], []
-
 
 def accuracy_check(
-        ref_locations: list,
-        ref_annotations: list,
+        ref_locations: np.ndarray,
+        ref_annotations: np.ndarray,
         locations: list,
         peaks: list,
         fig: bool,

@@ -127,10 +127,7 @@ def max_min_slopes(
         rslopes.append((samples[n] - samples[n + k]) / (-1 * k))
         lheights.append(np.absolute(samples[n] - samples[n - k]))
         rheights.append(np.absolute(samples[n+k] - samples[n]))
-    try:
-        return max(rslopes), min(rslopes), max(lslopes), min(lslopes), max(rheights), max(lheights)
-    except ValueError:
-        return 0, 0, 0, 0, 0, 0
+    return max(rslopes), min(rslopes), max(lslopes), min(lslopes), max(rheights), max(lheights)
 
 
 def max_slope_difference(
@@ -280,7 +277,7 @@ def third_criterion_re(
         h_avg = np.average(np.absolute(li[-8:]))
     except IndexError:
         h_avg = np.average(np.absolute(li[:]))
-    return np.abs(cur_height) > h_avg * 0.7
+    return np.abs(cur_height) > h_avg * 0.3
 
 def locate_r_peaks(
         heights: list,
@@ -321,12 +318,10 @@ def locate_r_peaks(
     a = round(0.027 * fs)
 
     if calibrate:
-        f = round(5*60*fs)+1
+        m = round(5*60*fs)+1
     else:
-        f = b
-
-    if len(locations) == 0:
-        for i in range(f, f+(3 * fs)):
+        m = b
+        for i in range(m, m+(3 * fs)):
             if initial(i, heights, fs):
                 element = max(np.absolute(heights[i - b:i + b + 1]))
                 loc = np.where(np.absolute(heights[i - b:i + b + 1]) == element)
@@ -337,7 +332,7 @@ def locate_r_peaks(
                     locations.append(loc)
 
     count = len(locations)
-    m = f
+
 
     while m < len(heights) + 1 - b:
         try:

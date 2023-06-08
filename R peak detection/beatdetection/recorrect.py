@@ -32,7 +32,7 @@ def check_peak(
         fs: int,
         loc: int,
         last_loc: int,
-        peak: int,
+        peak: float,
         slope_diff: list,
         slope_heights: list) -> Tuple[list, list]:
 
