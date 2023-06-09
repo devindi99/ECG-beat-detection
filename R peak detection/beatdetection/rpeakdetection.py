@@ -46,7 +46,7 @@ def initial(
         elif 128.00 / fs < sdiff_max < 204.80 / fs:
             teeta = 43.52 / fs
         else:
-            teeta = 12 / fs
+            teeta = 20 / fs
         # if sdiff_max > 20.480 / fs:
         #     teeta = 9.680 / fs
         # elif 2.800 / fs < sdiff_max < 20.480 / fs:
@@ -178,7 +178,7 @@ def teeta_diff(
     elif 128.00 / fs < s_avg < 204.80 / fs:
         return 43.52 / fs
     else:
-        return 12 / fs
+        return 20 / fs
     # if s_avg > 20.480 / fs:
     #     return 9.680 / fs
     # elif 2.800 / fs < s_avg < 20.480 / fs:
