@@ -13,6 +13,7 @@ from beatdetection import filters
 from scipy import signal
 import matplotlib.pyplot as plt
 
+
 remove_sym = ["+", "|", "~", "x", "]", "[", "U", " MISSB", "PSE", "TS", "T", "P", "M", "\""]
 slope_heights = []
 sdiffs = []
@@ -40,12 +41,18 @@ def initial(
         sdiff_max, max_height = max_slope_difference(maximum_r, minimum_r, maximum_l, minimum_l, maximum_l_height,
                                                      maximum_r_height)
 
-        if samples[n] > 20.480 / fs:
-            teeta = 9.680 / fs
-        elif 2.800 / fs < samples[n] < 20.480 / fs:
-            teeta = 6.352 / fs
+        if sdiff_max > 204.80 / fs:
+            teeta = 76.80 / fs
+        elif 128.00 / fs < sdiff_max < 204.80 / fs:
+            teeta = 43.52 / fs
         else:
-            teeta = 5.840 / fs
+            teeta = 12 / fs
+        # if sdiff_max > 20.480 / fs:
+        #     teeta = 9.680 / fs
+        # elif 2.800 / fs < sdiff_max < 20.480 / fs:
+        #     teeta = 6.352 / fs
+        # else:
+        #     teeta = 5.840 / fs
 
         first = sdiff_max > teeta
 
@@ -72,7 +79,7 @@ def initial(
 
 def read_annotations(
         name: int,
-        path: str) -> Tuple[np.ndarray, int]:
+        path: str) -> Tuple[List[float], int]:
     """
     ECG signal is extracted from the data base using WFDB tool box and passed through a low pass filter and two cascaded
     median filters to remove high frequency noise and baseline wander.
@@ -85,16 +92,10 @@ def read_annotations(
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
-
-    # Resample the original ECG signal to 250 Hz, comment out when using AHA database
     resampled = signal.resample_poly(heights, 250, 360)
 
-    # Filter requirements.
-    fs = 250  # sample rate, Hz
-    cutoff = 30  # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
-    order = 2  # sin wave can be approx represented as quadratic
-
-    heights = filters.butter_lowpass_filter(resampled, cutoff, fs, order)
+    # Resample the original ECG signal to 250 Hz, comment out when using AHA database
+    # heights = filters.Low_pass(resampled)
 
     # baseline removal using two cascaded median filters
     QRS_removed = signal.medfilt(heights, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
@@ -172,12 +173,18 @@ def teeta_diff(
     """
     s_avg = np.average(np.absolute(li[-8:]))
 
-    if s_avg > 20.480 / fs:
-        return 9.680 / fs
-    elif 2.800 / fs < s_avg < 20.480 / fs:
-        return 6.352 / fs
+    if s_avg > 204.80 / fs:
+        return 76.80 / fs
+    elif 128.00 / fs < s_avg < 204.80 / fs:
+        return 43.52 / fs
     else:
-        return 5.840 / fs
+        return 12 / fs
+    # if s_avg > 20.480 / fs:
+    #     return 9.680 / fs
+    # elif 2.800 / fs < s_avg < 20.480 / fs:
+    #     return 6.352 / fs
+    # else:
+    #     return 5.840 / fs
 
 
 def first_criterion(
@@ -283,7 +290,7 @@ def third_criterion_re(
         h_avg = np.average(np.absolute(li[-8:]))
     except IndexError:
         h_avg = np.average(np.absolute(li[:]))
-    return np.abs(cur_height) > h_avg * 0.4
+    return np.abs(cur_height) > h_avg * 0.3
 
 def locate_r_peaks(
         heights: list,
@@ -317,6 +324,8 @@ def locate_r_peaks(
 
     peaks = pe.copy()
     locations = lo.copy()
+    l=[]
+    p=[]
     slope_heights = sl.copy()
     sdiffs = sd.copy()
 
@@ -356,6 +365,8 @@ def locate_r_peaks(
                 element = max(np.absolute(heights[m - a:m + a + 1]))
                 loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
                 loc = loc[0][0] + m - a
+                l.append(loc)
+                p.append(heights[loc])
                 if loc - c > locations[-1]:
                     locations.append(loc)
                     peaks.append(heights[loc])
@@ -375,11 +386,12 @@ def locate_r_peaks(
             m += 1
 
         except ValueError:
+            m+=1
             continue
 
     if not calibrate:
         count = count-1
-
+    plt.scatter(l, p, color="red")
     return locations[count:], peaks[count:], count, sdiffs[count:], slope_heights[count:]
 
 
@@ -459,5 +471,4 @@ def new_r_peaks(
     peaks = peaks[1:]
     # plt.scatter(l, p, color="blue")
     return locations, peaks
-
 

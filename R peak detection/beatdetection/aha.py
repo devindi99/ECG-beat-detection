@@ -135,12 +135,10 @@ def calibration(heights, fs):
     # p = []
 
     locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
-    print("find locations at first 5 mins first round")
     k = len(locations)
     i = 0
 
     while i < k - 1:
-        print(i)
         state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * fs))
         if state:
             # l.append(locations[i])
@@ -168,6 +166,8 @@ def calibration(heights, fs):
     for m in range(len(locations)-1):
         RR.append(locations[m+1] - locations[m])
     avg_RR = np.average(RR)
+    # for i in range(len(sdiffs)):
+    #     print(sdiffs[i])
     # plt.scatter(l, p, color="green")
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
@@ -180,30 +180,36 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
         ecg, ann = read_aharecord_reference(file_dir, file_list[j])
         t = [i for i in range(len(ecg))]
         plt.plot(t, ecg)
+        # plt.show()
         plt.title(f'AHA record {file_list[j]}: ECG signal with peaks')
 
         # Filter requirements.
         fs = 250  # sample rate, Hz
         cutoff = 30  # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
         order = 2  # sin wave can be approx represented as quadratic
-        print("record extracted")
         # print(len(ecg))
         ecg = [ecg[i][0] for i in range(len(ecg))]
-        ecg = filters.butter_lowpass_filter(ecg, cutoff, fs, order)
-        print("low pass filtered")
-        # ecg = filters.iir(ecg, 2000)
+        h = filters.butter_lowpass_filter(ecg, cutoff, fs, order)
+        QRS_removed_h = scipy.signal.medfilt(h, kernel_size=round(0.2 * AHA_sampled_freq) + 1)
+        T_removed_h = scipy.signal.medfilt(QRS_removed_h, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
+        h = h - T_removed_h
+        t = [i for i in range(len(h))]
+        plt.plot(t, h)
 
-        QRS_removed = scipy.signal.medfilt(ecg, kernel_size=round(0.2 * AHA_sampled_freq) + 1)
-        T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
-        Baseline_removed = ecg - T_removed
-        print("baseline removed")
 
+        # ecg = filters.Low_pass(ecg)
+        #
+        # QRS_removed = scipy.signal.medfilt(ecg, kernel_size=round(0.2 * AHA_sampled_freq) + 1)
+        # T_removed = scipy.signal.medfilt(QRS_removed, kernel_size=round(0.6 * AHA_sampled_freq) + 1)
+        # Baseline_removed = ecg - T_removed
+        #
         # t = [i for i in range(len(Baseline_removed))]
         # plt.plot(t, Baseline_removed)
 
         # remove_qrs = scipy.signal.medfilt(Baseline_removed, kernel_size=round(0.1 * AHA_sampled_freq))
-        ecg = Baseline_removed
-
+        ecg = h
+        # t = [i for i in range(len(ecg))]
+        # plt.plot(t, ecg)
         ref_locations, ref_annotations = plot_peaks(ecg, ann, file_list[j])
         vfib=[]
         for i in range(len(ann)):
@@ -215,10 +221,8 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 except IndexError:
                     for m in range(ann[i][0], len(ecg)):
                         vfib.append(m)
-        print("vfib removed")
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
-        print("callibration done")
         loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
@@ -264,7 +268,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                                False, False)
+                                                               True, True)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -279,6 +283,6 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 if __name__ == '__main__':
     # check_file_list = list(AHA_records)
-    check_file_list = ["3202"]
+    check_file_list = ["5201", "5202", "5208", "6203", "6206", "5209", "7209", "8206"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)
