@@ -28,7 +28,7 @@ def calibration(
     :return: tuple(R peak locations: list, R peak heights: list, average RR interval: float, slope heights: list,
     slope differences: list)
     """
-    locations, peaks, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), False, [], [], [], [])
+    locations, peaks, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.3 * fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
@@ -76,7 +76,7 @@ for record in range(100, 235):
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(heights[:5*60*fs+1], fs)
         print(d/fs)
         i = 0
-        loc, pea, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5 * fs), True,
+        loc, pea, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.3 * fs), True,
                                                                                cal_locations, cal_peaks, slope_heights, sdiffs)
 
         k = len(loc)
