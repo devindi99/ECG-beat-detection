@@ -134,7 +134,7 @@ def calibration(heights, fs):
     # l = []
     # p = []
 
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.5* fs), False, [], [], [], [])
+    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.3* fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
@@ -223,7 +223,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                         vfib.append(m)
         start = time.time()
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(ecg[:5 * 60 * AHA_sampled_freq + 1], AHA_sampled_freq)
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.5 *  AHA_sampled_freq ), True,
+        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(ecg, AHA_sampled_freq, round(0.3 *  AHA_sampled_freq ), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
         # plt.scatter(loc, pea, color="red")
@@ -268,7 +268,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc, pea,
-                                                               True, True)
+                                                               False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)
@@ -282,7 +282,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
 
 if __name__ == '__main__':
-    # check_file_list = list(AHA_records)
-    check_file_list = ["5210", "5202", "5208", "6203", "6206", "5209", "7209", "8206"]
+    check_file_list = list(AHA_records)
+    # check_file_list = ["5210", "5202", "5208", "6203", "6206", "5209", "7209", "8206"]
     file_loc = 'D:/Semester 6/Internship/AHA_data/'
     main(file_loc, file_list=check_file_list)

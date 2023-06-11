@@ -46,7 +46,7 @@ def initial(
         elif 128.00 / fs < sdiff_max < 204.80 / fs:
             teeta = 43.52 / fs
         else:
-            teeta = 20 / fs
+            teeta = 20/ fs
         # if sdiff_max > 20.480 / fs:
         #     teeta = 9.680 / fs
         # elif 2.800 / fs < sdiff_max < 20.480 / fs:
@@ -98,9 +98,9 @@ def read_annotations(
     # heights = filters.Low_pass(resampled)
 
     # baseline removal using two cascaded median filters
-    QRS_removed = signal.medfilt(heights, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
+    QRS_removed = signal.medfilt(resampled, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
     T_removed = signal.medfilt(QRS_removed, kernel_size=round(0.6 * 250) + 1)  # Remove T waves
-    heights = heights - T_removed
+    heights = resampled - T_removed
 
     # A high pass filter for removing baseline wander, can use this instead of the two median filters
     # heights = filters.iir(heights, 2000)
