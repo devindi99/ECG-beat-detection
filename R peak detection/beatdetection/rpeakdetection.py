@@ -88,23 +88,32 @@ def read_annotations(
     :param path: folder path where the record exist
     :return: low pass filtered ECG signal and the sampling frequency (250 Hz)
     """
+    # Filter requirements.
+    fs = 250  # sample rate, Hz
+    cutoff = 37.5  # desired cutoff frequency of the filter, Hz , 36
+    order = 2  # sin wave can be approx represented as quadratic
 
     path = path + str(name)
     signals, fields = wfdb.rdsamp(path, channels=[0])
     heights = [signals[i][0] for i in range(len(signals))]
-    resampled = signal.resample_poly(heights, 250, 360)
 
     # Resample the original ECG signal to 250 Hz, comment out when using AHA database
+    resampled = signal.resample_poly(heights, 250, 360)
+    t = [i for i in range(len(resampled))]
+    plt.plot(t, resampled)
     # heights = filters.Low_pass(resampled)
+    Lowpass_filtered = filters.butter_lowpass_filter(resampled, cutoff, fs, order)
+
 
     # baseline removal using two cascaded median filters
-    QRS_removed = signal.medfilt(resampled, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
+    QRS_removed = signal.medfilt(Lowpass_filtered, kernel_size=round(0.2 * 250) + 1)  # Remove QRS and P waves
     T_removed = signal.medfilt(QRS_removed, kernel_size=round(0.6 * 250) + 1)  # Remove T waves
-    heights = resampled - T_removed
+    heights = Lowpass_filtered - T_removed
 
+    # heights = filters.butter_lowpass_filter(heights, cutoff, fs, order)
     # A high pass filter for removing baseline wander, can use this instead of the two median filters
     # heights = filters.iir(heights, 2000)
-    fs = 250
+
     return heights, fs
 
 
@@ -178,7 +187,7 @@ def teeta_diff(
     elif 128.00 / fs < s_avg < 204.80 / fs:
         return 43.52 / fs
     else:
-        return 20 / fs
+        return 20 / fs  #21
     # if s_avg > 20.480 / fs:
     #     return 9.680 / fs
     # elif 2.800 / fs < s_avg < 20.480 / fs:

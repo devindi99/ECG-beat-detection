@@ -16,6 +16,7 @@ if excel:
     ws1 = wb.create_sheet("Mysheet")
     ws1.title = sheet
 
+issues = [ 113, 116, 200, 203, 207, 228]
 
 def calibration(
         heights: list,
@@ -59,7 +60,7 @@ def calibration(
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(100, 235):
+for record in range(113, 235):
 
     try:
         remove = [102, 104, 107, 217]
@@ -117,7 +118,7 @@ for record in range(100, 235):
                 del pea[o]
 
         TP, FP, FN, sensitivty, pp, DER = beatpair.accuracy_check(ref_locations, ref_annotations, loc,  pea,
-                                                          False, False)
+                                                         False, False)
         print("TP: ", TP)
         print("FP: ", FP)
         print("FN: ", FN)

@@ -185,7 +185,7 @@ def main(file_dir: str, file_list: Optional[Union[Tuple[str], List[str]]] = None
 
         # Filter requirements.
         fs = 250  # sample rate, Hz
-        cutoff = 30  # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
+        cutoff = 37.5  # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
         order = 2  # sin wave can be approx represented as quadratic
         # print(len(ecg))
         ecg = [ecg[i][0] for i in range(len(ecg))]
