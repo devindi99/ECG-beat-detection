@@ -22,29 +22,25 @@ if excel:
     ws1 = wb.create_sheet("Mysheet")
     ws1.title = sheet
 #
-records = ["118e_6", "118e00", "118e06", "118e12", "118e18", "119e_6", "119e00", "119e06", "119e12", "119e18"]
+records = ["118e_6", "118e00", "118e06", "118e12", "118e18", "118e24", "119e_6", "119e00", "119e06", "119e12", "119e18", "119e24"]
 
 def calibration(heights, fs):
     l = []
     p = []
 
-    locations, peaks, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), False, [], [], [], [])
+    locations, peaks, _, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.3 * fs), False, [], [], [], [])
     k = len(locations)
     i = 0
 
     while i < k - 1:
         state = recorrect.check_rr(locations[i], locations[i + 1], round(0.7 * fs))
         if state:
-            l.append(locations[i])
-            l.append(locations[i + 1])
-            p.append(peaks[i])
-            p.append(peaks[i + 1])
             pre_loc = locations[:i + 1]
             post_loc = locations[i + 1:]
             pre_peaks = peaks[:i + 1]
             post_peaks = peaks[i + 1:]
 
-            add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[locations[i]:locations[i + 1]], fs,
+            add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[locations[i]:locations[i + 1]], fs,
                                                        locations[i], locations[i + 1], peaks[i], sdiffs[:i++1],
                                                        slope_heights[:i+1])
 
@@ -81,7 +77,7 @@ for record in records:
         cal_locations, cal_peaks, d, slope_heights, sdiffs = calibration(heights[:5 * 60 * fs + 1], fs)
         # plt.scatter(cal_locations, cal_peaks, color="blue")
         i = 0
-        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.375 * fs), True,
+        loc, pea, count, sdiffs, slope_heights = rpeakdetection.locate_r_peaks(heights, fs, round(0.3 * fs), True,
                                                                                cal_locations, cal_peaks, slope_heights,
                                                                                sdiffs)
         # plt.scatter(loc, pea, color="blue")
@@ -102,7 +98,7 @@ for record in records:
                 pre_peaks = pea[:i + 1]
                 post_peaks = pea[i + 1:]
 
-                add_locs, add_peaks = recorrect.check_peak(round(0.25 * fs), heights[loc[i]:loc[i + 1]], fs,
+                add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[loc[i]:loc[i + 1]], fs,
                                                            loc[i], loc[i + 1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])
                 n = len(add_locs)
@@ -113,12 +109,12 @@ for record in records:
                 i += n
             i += 1
 
-        plt.scatter(l, p, color="red", marker="o")
+        # plt.scatter(l, p, color="red", marker="o")
         loc = cal_locations + loc
         pea = cal_peaks + pea
         end = time.time()
 
-        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path, fs)
+        ref_locations, ref_annotations, a_fib = beatpair.ref_annotate(record, path)
         for m in range(len(a_fib)):
             if a_fib[m] in loc:
                 o = loc.index(a_fib[m])
