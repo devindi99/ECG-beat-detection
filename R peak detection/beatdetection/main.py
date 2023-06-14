@@ -60,7 +60,7 @@ def calibration(
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
 
-for record in range(113, 235):
+for record in range(100, 235):
 
     try:
         remove = [102, 104, 107, 217]

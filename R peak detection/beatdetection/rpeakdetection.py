@@ -337,7 +337,7 @@ def locate_r_peaks(
     p=[]
     slope_heights = sl.copy()
     sdiffs = sd.copy()
-
+    der = np.gradient(heights)
     b = round(0.063 * fs)
     a = round(0.027 * fs)
 
@@ -374,14 +374,18 @@ def locate_r_peaks(
                 element = max(np.absolute(heights[m - a:m + a + 1]))
                 loc = np.where(np.absolute(heights[m - a:m + a + 1]) == element)
                 loc = loc[0][0] + m - a
-                l.append(loc)
-                p.append(heights[loc])
+
                 if loc - c > locations[-1]:
-                    locations.append(loc)
-                    peaks.append(heights[loc])
-                    slope_heights.append(max_height)
-                    sdiffs.append(sdiff_max)
-                    m = loc
+                    if loc - locations[-1] < round(0.4*fs) and der[loc] < der[locations[-1]]/2:
+                        l.append(loc)
+                        p.append(heights[loc])
+                        pass
+                    else:
+                        locations.append(loc)
+                        peaks.append(heights[loc])
+                        slope_heights.append(max_height)
+                        sdiffs.append(sdiff_max)
+                        m = loc
 
 
                 else:
@@ -436,6 +440,7 @@ def new_r_peaks(
     locations = [begin_loc]
     l = []
     p = []
+    der = np.gradient(heights)
     slope_heights = sl
     sdiffs = sd
     b = round(0.063 * fs)
@@ -462,10 +467,16 @@ def new_r_peaks(
                 # p.append(heights[loc])
                 if loc+begin_loc + c < end_loc:
                     if loc+begin_loc - c > locations[-1]:
-                        locations.append(loc+begin_loc)
-                        peaks.append(heights[loc])
-                        slope_heights.append(max_height)
-                        sdiffs.append(sdiff_max)
+                        if loc+ begin_loc - locations[-1] < round(0.4 * fs) and der[loc] < der[locations[-1]-begin_loc] / 2:
+                            l.append(loc)
+                            p.append(heights[loc])
+                            pass
+                        else:
+
+                            locations.append(loc+begin_loc)
+                            peaks.append(heights[loc])
+                            slope_heights.append(max_height)
+                            sdiffs.append(sdiff_max)
 
                     else:
                         if sdiff_max > sdiffs[-1]:
