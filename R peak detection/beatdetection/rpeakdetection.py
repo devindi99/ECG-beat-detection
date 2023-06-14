@@ -46,7 +46,7 @@ def initial(
         elif 128.00 / fs < sdiff_max < 204.80 / fs:
             teeta = 43.52 / fs
         else:
-            teeta = 20/ fs
+            teeta = 15/ fs
         # if sdiff_max > 20.480 / fs:
         #     teeta = 9.680 / fs
         # elif 2.800 / fs < sdiff_max < 20.480 / fs:
@@ -90,7 +90,7 @@ def read_annotations(
     """
     # Filter requirements.
     fs = 250  # sample rate, Hz
-    cutoff = 37.5  # desired cutoff frequency of the filter, Hz , 36
+    cutoff = 30  # desired cutoff frequency of the filter, Hz , 36
     order = 2  # sin wave can be approx represented as quadratic
 
     path = path + str(name)
@@ -187,7 +187,7 @@ def teeta_diff(
     elif 128.00 / fs < s_avg < 204.80 / fs:
         return 43.52 / fs
     else:
-        return 20 / fs  #21
+        return 15 / fs  #21
     # if s_avg > 20.480 / fs:
     #     return 9.680 / fs
     # elif 2.800 / fs < s_avg < 20.480 / fs:
@@ -376,7 +376,7 @@ def locate_r_peaks(
                 loc = loc[0][0] + m - a
 
                 if loc - c > locations[-1]:
-                    if loc - locations[-1] < round(0.4*fs) and der[loc] < der[locations[-1]]/2:
+                    if loc - locations[-1] < round(0.4*fs) and np.absolute(der[loc]) < np.absolute(der[locations[-1]])/2:
                         l.append(loc)
                         p.append(heights[loc])
                         pass
@@ -467,7 +467,7 @@ def new_r_peaks(
                 # p.append(heights[loc])
                 if loc+begin_loc + c < end_loc:
                     if loc+begin_loc - c > locations[-1]:
-                        if loc+ begin_loc - locations[-1] < round(0.4 * fs) and der[loc] < der[locations[-1]-begin_loc] / 2:
+                        if loc+ begin_loc - locations[-1] < round(0.4 * fs) and np.absolute(der[loc])< np.absolute(der[locations[-1]-begin_loc]) / 2:
                             l.append(loc)
                             p.append(heights[loc])
                             pass
