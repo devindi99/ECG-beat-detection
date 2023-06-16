@@ -59,6 +59,7 @@ def calibration(
     avg_RR = np.average(RR)
     return locations, peaks, round(avg_RR), slope_heights, sdiffs
 
+issues = [113, 203, 209, 210]
 
 for record in range(100, 235):
 
@@ -71,6 +72,7 @@ for record in range(100, 235):
 
         t = [i for i in range(len(heights))]
         plt.plot(t, heights)
+        plt.title("Record: "+str(record))
         print(record)
 
         start = time.time()
@@ -92,10 +94,10 @@ for record in range(100, 235):
                 pre_peaks = pea[:i+1]
                 post_peaks = pea[i+1:]
 
-                for m in range(loc[i], loc[i+1]+1):
-                    l.append(m)
-                    p.append(heights[m])
-                plt.plot(l, p, color="red")
+                # for m in range(loc[i], loc[i+1]+1):
+                #     l.append(m)
+                #     p.append(heights[m])
+                # plt.plot(l, p, color="red")
                 add_locs, add_peaks = recorrect.check_peak(round(0.28 * fs), heights[loc[i]:loc[i+1]], fs,
                                                            loc[i], loc[i+1], pea[i], sdiffs[:i],
                                                            slope_heights[:i])

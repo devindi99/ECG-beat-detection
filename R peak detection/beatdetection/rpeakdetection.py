@@ -376,7 +376,7 @@ def locate_r_peaks(
                 loc = loc[0][0] + m - a
 
                 if loc - c > locations[-1]:
-                    if loc - locations[-1] < round(0.4*fs) and np.absolute(der[loc]) < np.absolute(der[locations[-1]])/2:
+                    if loc - locations[-1] < round(0.38*fs) and np.absolute(der[loc]) < np.absolute(der[locations[-1]])/3:
                         l.append(loc)
                         p.append(heights[loc])
                         pass
@@ -467,7 +467,7 @@ def new_r_peaks(
                 # p.append(heights[loc])
                 if loc+begin_loc + c < end_loc:
                     if loc+begin_loc - c > locations[-1]:
-                        if loc+ begin_loc - locations[-1] < round(0.4 * fs) and np.absolute(der[loc])< np.absolute(der[locations[-1]-begin_loc]) / 2:
+                        if loc+ begin_loc - locations[-1] < round(0.38* fs) and np.absolute(der[loc])< np.absolute(der[locations[-1]-begin_loc]) / 3:
                             l.append(loc)
                             p.append(heights[loc])
                             pass
